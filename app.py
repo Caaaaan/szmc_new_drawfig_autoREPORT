@@ -910,13 +910,13 @@ def run_step(task_dir: str, step: int, params: dict = None):
         ),
         6: lambda: _run_claude(
             task_dir,
-            os.path.join(task_dir, _get_report_filename(task_dir)),
+            os.path.join(task_dir, _get_report_filename(task_dir, line_number)),
             params,
-            None,
+            line_number,
         ),
         7: lambda: _convert_html_to_pdf(
-            os.path.join(task_dir, _get_report_filename(task_dir)),
-            os.path.join(task_dir, _get_report_filename(task_dir).replace(".html", ".pdf")),
+            os.path.join(task_dir, _get_report_filename(task_dir, line_number)),
+            os.path.join(task_dir, _get_report_filename(task_dir, line_number).replace(".html", ".pdf")),
         ),
     }
 
