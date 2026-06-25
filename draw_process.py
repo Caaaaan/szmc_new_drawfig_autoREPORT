@@ -24,6 +24,21 @@ PRESSURE_MIN_VALID = 10  # 接触压力最低有效值，<=此值视为接触异
 WEAR_WIDTH_THRESHOLD = 8  # 磨耗宽度阈值，单位：mm
 HEIGHT_MAX_THRESHOLD = 4400  # 导高上限阈值，单位：mm（11号线/5号线导高>=4400mm不纳入统计）
 
+# 需要导高 < 4400mm 过滤的线路（由 welcome.html 用户交互提供 line_number）
+HEIGHT_FILTER_LINES = {"5号线", "11号线"}
+
+
+def needs_height_filter(line_number: str) -> bool:
+    """检查当前线路是否需要导高 < 4400mm 过滤。
+
+    Args:
+        line_number: 从 welcome.html 用户交互获得的线路号，如 "11号线"、"5号线"
+
+    Returns:
+        True 如果该线路需要过滤导高 >= 4400mm 的数据点
+    """
+    return bool(line_number) and line_number in HEIGHT_FILTER_LINES
+
 # 导高差值区间定义（前开后闭）
 HEIGHT_DIFF_BINS = [0, 4, 6, 8, 10, 12, 15, 101]
 HEIGHT_DIFF_LABELS = ['0-4', '4-6', '6-8', '8-10', '10-12', '12-15', '15-100']
@@ -65,17 +80,36 @@ def load_station_data(json_path: str = "station.json") -> Dict[str, List[str]]:
 STATION_DATA = load_station_data(STATION_JSON_PATH)
 
 
-def get_station_order(line_name: str, line_type: str) -> Optional[List[str]]:
-    key = f"{line_name}-{line_type}"
-    if key in STATION_DATA:
-        return STATION_DATA[key]
-    # 尝试模糊匹配：数据中的线名可能包含 station.json 中线名的前缀
-    for skey in STATION_DATA:
-        if skey.startswith(line_name + '-') or line_name.startswith(skey.split('-')[0]):
-            if skey.endswith('-' + line_type):
-                print(f"模糊匹配: 数据线名'{line_name}' -> station.json键'{skey}'")
+def get_station_order(line_number: str = "", line_type: str = "",
+                      line_name: str = "") -> Optional[List[str]]:
+    """根据线路号（来自 welcome.html 用户交互）和行别查找站区顺序。
+
+    优先使用 line_number（如 "11号线"）+ line_type（如 "上行"）在 station.json
+    中匹配包含该线路号的键；line_number 为空时回退到旧的 line_name 模糊匹配。
+
+    Returns:
+        站区列表，未找到返回 None
+    """
+    # 优先：使用用户交互提供的 line_number 精确匹配
+    if line_number and line_type:
+        target_suffix = f"-{line_type}"
+        for skey in STATION_DATA:
+            if line_number in skey and skey.endswith(target_suffix):
                 return STATION_DATA[skey]
-    print(f"警告: 未找到线名'{line_name}'行别'{line_type}'的站区顺序数据")
+        print(f"警告: 未找到线路'{line_number}'行别'{line_type}'的站区顺序数据")
+
+    # 回退：使用文件名解析的 line_name 模糊匹配（兼容 CLI 模式）
+    if line_name and line_type:
+        key = f"{line_name}-{line_type}"
+        if key in STATION_DATA:
+            return STATION_DATA[key]
+        for skey in STATION_DATA:
+            if skey.startswith(line_name + '-') or line_name.startswith(skey.split('-')[0]):
+                if skey.endswith('-' + line_type):
+                    print(f"模糊匹配: 数据线名'{line_name}' -> station.json键'{skey}'")
+                    return STATION_DATA[skey]
+        print(f"警告: 未找到线名'{line_name}'行别'{line_type}'的站区顺序数据")
+
     return None
 
 
@@ -349,7 +383,8 @@ def plot_graph2_hardpoint_by_pullout(file_info_list: List[Dict],
 # Graph 3: 硬点按站区 — 柱状图（每行别一张图）
 # ============================================================
 def plot_graph3_hardpoint_by_station(file_info_list: List[Dict],
-                                      output_path: str) -> None:
+                                      output_path: str,
+                                      line_number: str = "") -> None:
     """
     以站区名为横坐标，硬点值超限数据点数量为纵坐标，
     柱状图，不同月份不同颜色。
@@ -360,6 +395,8 @@ def plot_graph3_hardpoint_by_station(file_info_list: List[Dict],
         同一线路和行别的文件信息列表
     output_path : str
         输出图片路径
+    line_number : str
+        从 welcome.html 用户交互获得的线路号，用于 station.json 查找
     """
     if not file_info_list:
         return
@@ -367,7 +404,9 @@ def plot_graph3_hardpoint_by_station(file_info_list: List[Dict],
     line_name = file_info_list[0]['line_name']
     line_type = file_info_list[0]['line_type']
 
-    ordered_stations = get_station_order(line_name, line_type)
+    ordered_stations = get_station_order(line_number=line_number,
+                                         line_type=line_type,
+                                         line_name=line_name)
     if ordered_stations is None:
         ordered_stations = []
 
@@ -517,7 +556,8 @@ def plot_graph4_pullout_distribution(file_info_list: List[Dict],
 # Graph 5: 导高坡度变化 — 饼状图
 # ============================================================
 def plot_graph5_height_diff_pie(file_info_list: List[Dict],
-                                 output_path: str) -> None:
+                                 output_path: str,
+                                 line_number: str = "") -> None:
     """
     按"站区+杆号"分组，计算导高最大值-最小值，落入差值区间，
     饼状图显示各区间比例和个数。仅使用最新月份的数据。
@@ -526,6 +566,8 @@ def plot_graph5_height_diff_pie(file_info_list: List[Dict],
     ----------
     file_info_list : List[Dict]
         同一线路和行别的文件信息列表
+    line_number : str
+        从 welcome.html 用户交互获得的线路号，如 "11号线"、"5号线"，用于判断是否需要导高<4400mm过滤
     output_path : str
         输出图片路径
     """
@@ -540,15 +582,15 @@ def plot_graph5_height_diff_pie(file_info_list: List[Dict],
     latest_fi_list = [fi for fi in file_info_list
                       if _extract_month_label(fi['filename']) == latest_month]
 
-    _is_line_11 = "11号线" in line_name or "5号线" in line_name
+    _filter_height = needs_height_filter(line_number)
     all_diffs = []
     for fi in latest_fi_list:
         df = fi['df']
         height_col = '导高(mm)'
         if height_col not in df.columns:
             continue
-        # 11号线/5号线仅统计导高 < 4400mm 的数据点
-        if _is_line_11:
+        # 特定线路仅统计导高 < 4400mm 的数据点
+        if _filter_height:
             df = df[df[height_col] < HEIGHT_MAX_THRESHOLD]
         # 按"站区+杆号"分组
         grouped = df.groupby(df['站区'].astype(str) + '_' + df['杆号'].astype(str))
@@ -636,7 +678,8 @@ def plot_graph5_height_diff_pie(file_info_list: List[Dict],
 # Graph 6: 接触压力超限按站区统计 — 折线图（每行别一张图）
 # ============================================================
 def plot_graph6_pressure_by_station(file_info_list: List[Dict],
-                                     output_path: str) -> None:
+                                     output_path: str,
+                                     line_number: str = "") -> None:
     """
     按站区统计接触压力超限（高于上限，或介于最低有效值与下限之间）的数据点数量，折线图，不同月份不同颜色。
     <=10N 视为接触异常，不纳入统计。
@@ -647,6 +690,8 @@ def plot_graph6_pressure_by_station(file_info_list: List[Dict],
         同一线路和行别的文件信息列表
     output_path : str
         输出图片路径
+    line_number : str
+        从 welcome.html 用户交互获得的线路号，用于 station.json 查找
     """
     if not file_info_list:
         return
@@ -654,7 +699,9 @@ def plot_graph6_pressure_by_station(file_info_list: List[Dict],
     line_name = file_info_list[0]['line_name']
     line_type = file_info_list[0]['line_type']
 
-    ordered_stations = get_station_order(line_name, line_type)
+    ordered_stations = get_station_order(line_number=line_number,
+                                         line_type=line_type,
+                                         line_name=line_name)
     if ordered_stations is None:
         ordered_stations = []
 
@@ -722,7 +769,8 @@ def plot_graph6_pressure_by_station(file_info_list: List[Dict],
 # Graph 7: 磨耗宽度分布 — 折线图（每行别一张图）
 # ============================================================
 def plot_graph7_wear_width_distribution(file_info_list: List[Dict],
-                                         output_path: str) -> None:
+                                         output_path: str,
+                                         line_number: str = "") -> None:
     """
     磨耗宽度处于 8-10,10-12,12-14,>14mm 四个区间统计，
     折线图，不同月份不同颜色。
@@ -731,6 +779,8 @@ def plot_graph7_wear_width_distribution(file_info_list: List[Dict],
     ----------
     file_info_list : List[Dict]
         同一线路和行别的文件信息列表
+    line_number : str
+        从 welcome.html 用户交互获得的线路号，用于判断是否需要导高<4400mm过滤
     output_path : str
         输出图片路径
     """
@@ -747,14 +797,14 @@ def plot_graph7_wear_width_distribution(file_info_list: List[Dict],
     n_bins = len(bin_labels)
 
     data_by_month = {}
-    _is_line_11 = "11号线" in line_name or "5号线" in line_name
+    _filter_height = needs_height_filter(line_number)
     for fi in file_info_list:
         month = _extract_month_label(fi['filename'])
         df = fi['df']
         if wear_col not in df.columns:
             continue
-        # 11号线/5号线仅统计导高 < 4400mm 的数据点
-        if _is_line_11 and '导高(mm)' in df.columns:
+        # 特定线路仅统计导高 < 4400mm 的数据点
+        if _filter_height and '导高(mm)' in df.columns:
             df = df[df['导高(mm)'] < HEIGHT_MAX_THRESHOLD]
         wear = pd.to_numeric(df[wear_col], errors='coerce')
         # 只统计磨耗宽度 >= 8mm 的
@@ -815,7 +865,8 @@ def plot_graph7_wear_width_distribution(file_info_list: List[Dict],
 # Graph 8: 磨耗宽度>8mm 按站区统计 — 柱状图（每行别一张图）
 # ============================================================
 def plot_graph8_wear_width_by_station(file_info_list: List[Dict],
-                                       output_path: str) -> None:
+                                       output_path: str,
+                                       line_number: str = "") -> None:
     """
     按站区统计磨耗宽度>8mm的数据点数量，柱状图，不同月份不同颜色。
 
@@ -823,6 +874,8 @@ def plot_graph8_wear_width_by_station(file_info_list: List[Dict],
     ----------
     file_info_list : List[Dict]
         同一线路和行别的文件信息列表
+    line_number : str
+        从 welcome.html 用户交互获得的线路号，用于判断是否需要导高<4400mm过滤
     output_path : str
         输出图片路径
     """
@@ -832,7 +885,9 @@ def plot_graph8_wear_width_by_station(file_info_list: List[Dict],
     line_name = file_info_list[0]['line_name']
     line_type = file_info_list[0]['line_type']
 
-    ordered_stations = get_station_order(line_name, line_type)
+    ordered_stations = get_station_order(line_number=line_number,
+                                         line_type=line_type,
+                                         line_name=line_name)
     if ordered_stations is None:
         ordered_stations = []
 
@@ -843,15 +898,15 @@ def plot_graph8_wear_width_by_station(file_info_list: List[Dict],
     n_months = len(month_labels)
 
     wear_col = '磨耗宽度(mm)'
-    _is_line_11 = "11号线" in line_name or "5号线" in line_name
+    _filter_height = needs_height_filter(line_number)
     data_by_month = {}
     for fi in file_info_list:
         month = _extract_month_label(fi['filename'])
         df = fi['df']
         if wear_col not in df.columns:
             continue
-        # 11号线/5号线仅统计导高 < 4400mm 的数据点
-        if _is_line_11 and '导高(mm)' in df.columns:
+        # 特定线路仅统计导高 < 4400mm 的数据点
+        if _filter_height and '导高(mm)' in df.columns:
             df = df[df['导高(mm)'] < HEIGHT_MAX_THRESHOLD]
         wear = pd.to_numeric(df[wear_col], errors='coerce')
         mask = wear > WEAR_WIDTH_THRESHOLD
@@ -908,7 +963,8 @@ def plot_graph8_wear_width_by_station(file_info_list: List[Dict],
 # Graph 9: 磨耗宽度>8mm 按拉出值区间 — 柱状图（每行别一张图）
 # ============================================================
 def plot_graph9_wear_width_by_pullout(file_info_list: List[Dict],
-                                       output_path: str) -> None:
+                                       output_path: str,
+                                       line_number: str = "") -> None:
     """
     按拉出值区间统计磨耗宽度>8mm的数据点数量，柱状图，不同月份不同颜色。
 
@@ -916,6 +972,8 @@ def plot_graph9_wear_width_by_pullout(file_info_list: List[Dict],
     ----------
     file_info_list : List[Dict]
         同一线路和行别的文件信息列表
+    line_number : str
+        从 welcome.html 用户交互获得的线路号，用于判断是否需要导高<4400mm过滤
     output_path : str
         输出图片路径
     """
@@ -934,14 +992,14 @@ def plot_graph9_wear_width_by_pullout(file_info_list: List[Dict],
     n_bins = len(bin_labels)
 
     data_by_month = {}
-    _is_line_11 = "11号线" in line_name or "5号线" in line_name
+    _filter_height = needs_height_filter(line_number)
     for fi in file_info_list:
         month = _extract_month_label(fi['filename'])
         df = fi['df']
         if wear_col not in df.columns or pullout_col not in df.columns:
             continue
-        # 11号线/5号线仅统计导高 < 4400mm 的数据点
-        if _is_line_11 and '导高(mm)' in df.columns:
+        # 特定线路仅统计导高 < 4400mm 的数据点
+        if _filter_height and '导高(mm)' in df.columns:
             df = df[df['导高(mm)'] < HEIGHT_MAX_THRESHOLD]
         wear = pd.to_numeric(df[wear_col], errors='coerce')
         pullout = pd.to_numeric(df[pullout_col], errors='coerce')

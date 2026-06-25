@@ -10,6 +10,8 @@ import re
 import sys
 import pandas as pd
 
+from draw_process import needs_height_filter
+
 # 阈值常量（与 draw_process.py / generate_summary_tables.py 保持一致）
 HEIGHT_MAX_THRESHOLD = 4400  # mm（11号线/5号线导高上限，导高>=4400mm不纳入统计）
 
@@ -100,12 +102,13 @@ def _build_exclusion_set(direction: str) -> set:
     return excluded
 
 
-def export_height_diff_data(df: pd.DataFrame, output_dir: str, direction: str, filepath: str = ""):
+def export_height_diff_data(df: pd.DataFrame, output_dir: str, direction: str,
+                              filepath: str = "", line_number: str = ""):
     """
     Excel2: 按 站区+杆号 分组，取组内 导高(mm) 最大/最小值，高差=最大-最小。
         按高差降序，取前10，杆号互不相同。
     列：站区、公里标、杆号、最大导高、最小导高、高差
-    杆号过滤仅当输入文件为"11号线"时生效。
+    杆号过滤仅当线路为"11号线"时生效。
     """
     if "导高(mm)" not in df.columns:
         print("  警告: 缺少列 '导高(mm)'，跳过 HEIGHT_DIFF_DATA")
@@ -113,8 +116,8 @@ def export_height_diff_data(df: pd.DataFrame, output_dir: str, direction: str, f
 
     df_work = df.dropna(subset=["导高(mm)"]).copy()
 
-    # 11号线/5号线仅统计导高 < 4400mm 的数据点
-    if "11号线" in filepath or "5号线" in filepath:
+    # 特定线路仅统计导高 < 4400mm 的数据点
+    if needs_height_filter(line_number):
         df_work = df_work[df_work["导高(mm)"] < HEIGHT_MAX_THRESHOLD]
 
     grouped = df_work.groupby(["站区", "杆号"], as_index=False).agg(
@@ -128,7 +131,7 @@ def export_height_diff_data(df: pd.DataFrame, output_dir: str, direction: str, f
     grouped = grouped.drop_duplicates(subset=["杆号"])
 
     # 杆号过滤仅对11号线生效
-    if "11号线" in filepath:
+    if line_number == "11号线":
         exclusion_set = _build_exclusion_set(direction)
         grouped = grouped[~grouped["杆号"].apply(
             lambda x: any(ex in str(x) for ex in exclusion_set)
@@ -174,11 +177,12 @@ def export_pressure_overlimit_table(df: pd.DataFrame, output_dir: str, direction
     print(f"  已生成: {fname} ({len(result)} 行)")
 
 
-def export_wear_width_data(df: pd.DataFrame, output_dir: str, direction: str, filepath: str = ""):
+def export_wear_width_data(df: pd.DataFrame, output_dir: str, direction: str,
+                             filepath: str = "", line_number: str = ""):
     """
     Excel4: 按 磨耗宽度(mm) 降序，取前10，杆号互不相同。
     列：站区、公里标、杆号、磨耗宽度
-    导高超过4400mm的不参与筛选，对11号线/5号线生效。
+    导高超过4400mm的不参与筛选，对特定线路生效。
     """
     if "磨耗宽度(mm)" not in df.columns:
         print("  警告: 缺少列 '磨耗宽度(mm)'，跳过 WEAR_WIDTH_DATA")
@@ -186,8 +190,8 @@ def export_wear_width_data(df: pd.DataFrame, output_dir: str, direction: str, fi
 
     df_work = df.dropna(subset=["磨耗宽度(mm)"]).copy()
 
-    # 导高过滤：导高>=4400mm的不参与筛选，对11号线/5号线生效
-    if ("11号线" in filepath or "5号线" in filepath) and "导高(mm)" in df_work.columns:
+    # 导高过滤：导高>=4400mm的不参与筛选，对特定线路生效
+    if needs_height_filter(line_number) and "导高(mm)" in df_work.columns:
         before = len(df_work)
         df_work = df_work[df_work["导高(mm)"] < HEIGHT_MAX_THRESHOLD]
         print(f"  Excel4 导高过滤: 排除 {before - len(df_work)} 行（导高>={HEIGHT_MAX_THRESHOLD}mm）")
@@ -205,9 +209,11 @@ def export_wear_width_data(df: pd.DataFrame, output_dir: str, direction: str, fi
     print(f"  已生成: {fname} ({len(result)} 行)")
 
 
-def process_excel(filepath: str, output_dir: str = "output_excel", direction: str = None):
+def process_excel(filepath: str, output_dir: str = "output_excel", direction: str = None,
+                  line_number: str = ""):
     """主处理函数：读取 Excel，生成 4 个 top-10 表格。
     direction: "UP" or "DOWN"，若为 None 则回退检测。
+    line_number: 从 welcome.html 用户交互获得的线路号，如 "11号线"。
     """
     if not os.path.exists(filepath):
         print(f"错误: 文件不存在 - {filepath}")
@@ -228,9 +234,9 @@ def process_excel(filepath: str, output_dir: str = "output_excel", direction: st
 
     print("\n生成 top-10 表格...")
     export_hardpoint_data(df, output_dir, direction)
-    export_height_diff_data(df, output_dir, direction, filepath)
+    export_height_diff_data(df, output_dir, direction, filepath, line_number=line_number)
     export_pressure_overlimit_table(df, output_dir, direction)
-    export_wear_width_data(df, output_dir, direction, filepath)
+    export_wear_width_data(df, output_dir, direction, filepath, line_number=line_number)
 
     print(f"\n全部完成，输出目录: {output_dir}/")
 
@@ -319,14 +325,16 @@ def _scan_files_with_direction(data_dir: str) -> list:
     return result
 
 
-def run_latest_files(data_dir: str, output_dir: str = "output_excel"):
+def run_latest_files(data_dir: str, output_dir: str = "output_excel",
+                     line_number: str = ""):
     """供 Web 服务调用：处理 data_dir 中最新日期的所有文件。"""
     filepaths, date_str, direction_map = _find_latest_files(data_dir)
     for fp in filepaths:
-        process_excel(fp, output_dir, direction=direction_map.get(fp))
+        process_excel(fp, output_dir, direction=direction_map.get(fp),
+                      line_number=line_number)
 
 
-def run(data_dir: str, output_dir: str = "output_excel"):
+def run(data_dir: str, output_dir: str = "output_excel", line_number: str = ""):
     """供 Web 服务调用：处理 data_dir 中所有 Excel 文件。"""
     if not os.path.isdir(data_dir):
         print(f"错误: 数据目录 '{data_dir}' 不存在")
@@ -338,7 +346,7 @@ def run(data_dir: str, output_dir: str = "output_excel"):
         return
 
     for fp, direction in files_with_dir:
-        process_excel(fp, output_dir, direction=direction)
+        process_excel(fp, output_dir, direction=direction, line_number=line_number)
 
 
 if __name__ == "__main__":

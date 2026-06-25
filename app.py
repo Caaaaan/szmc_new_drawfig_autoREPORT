@@ -152,6 +152,7 @@ def run_pipeline(task_id: str, task_dir: str, params: dict, start_step: int = 1)
                 output_fig_dir=output_fig_dir,
                 output_excel_dir=output_excel_dir,
                 station_json_path=station_json_path,
+                line_number=params.get("line_number", ""),
             )
             step_done(1)
 
@@ -166,6 +167,7 @@ def run_pipeline(task_id: str, task_dir: str, params: dict, start_step: int = 1)
             export_top10_tables.run_latest_files(
                 data_dir=original_data_dir,
                 output_dir=output_excel_dir,
+                line_number=params.get("line_number", ""),
             )
             step_done(2)
 
@@ -175,6 +177,7 @@ def run_pipeline(task_id: str, task_dir: str, params: dict, start_step: int = 1)
             generate_table2_1.run(
                 data_dir=original_data_dir,
                 output_dir=output_excel_dir,
+                line_number=params.get("line_number", ""),
             )
             step_done(3)
 
@@ -194,6 +197,7 @@ def run_pipeline(task_id: str, task_dir: str, params: dict, start_step: int = 1)
                 data_dir=original_data_dir,
                 output_dir=output_excel_dir,
                 station_json_path=station_json_path,
+                line_number=params.get("line_number", ""),
             )
             step_done(5)
 
@@ -868,6 +872,8 @@ def run_step(task_dir: str, step: int, params: dict = None):
     if params is None:
         params = {}
 
+    line_number = params.get("line_number", "")
+
     original_data_dir = os.path.join(task_dir, "original_data")
     defect_report_dir = os.path.join(task_dir, "defect_report")
     output_fig_dir = os.path.join(task_dir, "output_fig")
@@ -880,14 +886,17 @@ def run_step(task_dir: str, step: int, params: dict = None):
             output_fig_dir=output_fig_dir,
             output_excel_dir=output_excel_dir,
             station_json_path=station_json_path,
+            line_number=line_number,
         ),
         2: lambda: export_top10_tables.run_latest_files(
             data_dir=original_data_dir,
             output_dir=output_excel_dir,
+            line_number=line_number,
         ),
         3: lambda: generate_table2_1.run(
             data_dir=original_data_dir,
             output_dir=output_excel_dir,
+            line_number=line_number,
         ),
         4: lambda: generate_table2_2_3.run(
             data_dir=defect_report_dir,
@@ -897,6 +906,7 @@ def run_step(task_dir: str, step: int, params: dict = None):
             data_dir=original_data_dir,
             output_dir=output_excel_dir,
             station_json_path=station_json_path,
+            line_number=line_number,
         ),
         6: lambda: _run_claude(
             task_dir,

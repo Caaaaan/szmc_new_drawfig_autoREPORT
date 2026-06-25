@@ -114,8 +114,10 @@ def group_by_line_and_direction(file_infos: list) -> dict:
     return groups
 
 
-def _run_pipeline_inner(data_dir: str, output_fig_dir: str, output_excel_dir: str):
-    """内部：执行完整流水线（已确保输出目录存在，data_dir 已验证）。"""
+def _run_pipeline_inner(data_dir: str, output_fig_dir: str, output_excel_dir: str,
+                        line_number: str = ""):
+    """内部：执行完整流水线（已确保输出目录存在，data_dir 已验证）。
+    line_number: 从 welcome.html 用户交互获得的线路号，如 "11号线"、"5号线"。"""
     all_files = load_all_files(data_dir)
     if not all_files:
         print("错误: 未加载到任何数据文件，程序退出")
@@ -156,6 +158,7 @@ def _run_pipeline_inner(data_dir: str, output_fig_dir: str, output_excel_dir: st
         plot_graph3_hardpoint_by_station(
             file_list,
             os.path.join(output_fig_dir, f"graph3_hardpoint_by_station_{safe_name}.png"),
+            line_number=line_number,
         )
 
         # Graph 4: 拉出值分布
@@ -170,6 +173,7 @@ def _run_pipeline_inner(data_dir: str, output_fig_dir: str, output_excel_dir: st
         plot_graph5_height_diff_pie(
             file_list,
             os.path.join(output_fig_dir, f"graph5_height_diff_pie_{safe_name}.png"),
+            line_number=line_number,
         )
 
         # Graph 6: 压力按站区（折线图）
@@ -177,6 +181,7 @@ def _run_pipeline_inner(data_dir: str, output_fig_dir: str, output_excel_dir: st
         plot_graph6_pressure_by_station(
             file_list,
             os.path.join(output_fig_dir, f"graph6_pressure_by_station_{safe_name}.png"),
+            line_number=line_number,
         )
 
         # Graph 7: 磨耗宽度分布（折线图）
@@ -184,6 +189,7 @@ def _run_pipeline_inner(data_dir: str, output_fig_dir: str, output_excel_dir: st
         plot_graph7_wear_width_distribution(
             file_list,
             os.path.join(output_fig_dir, f"graph7_wear_width_distribution_{safe_name}.png"),
+            line_number=line_number,
         )
 
         # Graph 8: 磨耗宽度按站区（柱状图）
@@ -191,6 +197,7 @@ def _run_pipeline_inner(data_dir: str, output_fig_dir: str, output_excel_dir: st
         plot_graph8_wear_width_by_station(
             file_list,
             os.path.join(output_fig_dir, f"graph8_wear_width_by_station_{safe_name}.png"),
+            line_number=line_number,
         )
 
         # Graph 9: 磨耗宽度按拉出值区间（柱状图）
@@ -198,6 +205,7 @@ def _run_pipeline_inner(data_dir: str, output_fig_dir: str, output_excel_dir: st
         plot_graph9_wear_width_by_pullout(
             file_list,
             os.path.join(output_fig_dir, f"graph9_wear_width_by_pullout_{safe_name}.png"),
+            line_number=line_number,
         )
 
     print("\n" + "=" * 60)
@@ -210,8 +218,10 @@ def _run_pipeline_inner(data_dir: str, output_fig_dir: str, output_excel_dir: st
 def run_pipeline(data_dir: str = "original_data",
                  output_fig_dir: str = "output_fig",
                  output_excel_dir: str = "output_excel",
-                 station_json_path: str = "station.json"):
+                 station_json_path: str = "station.json",
+                 line_number: str = ""):
     """流水线入口（供 Web 服务调用，所有路径均已参数化）。
+    line_number: 从 welcome.html 用户交互获得的线路号，如 "11号线"。
 
     与 CLI 模式 main() 的区别：路径可重定向到任意任务目录，
     确保多用户并发时互不干扰。
@@ -228,7 +238,7 @@ def run_pipeline(data_dir: str = "original_data",
         if not os.path.exists(d):
             os.makedirs(d)
 
-    _run_pipeline_inner(data_dir, output_fig_dir, output_excel_dir)
+    _run_pipeline_inner(data_dir, output_fig_dir, output_excel_dir, line_number=line_number)
 
 
 def main():

@@ -2,10 +2,12 @@ import os
 import re
 import pandas as pd
 
+from draw_process import needs_height_filter
+
 OUTPUT_NAME = "table2_1.xlsx"
 
 # 阈值常量（与 draw_process.py / generate_summary_tables.py 保持一致）
-HEIGHT_MAX_THRESHOLD = 4400  # mm（11号线/5号线导高上限）
+HEIGHT_MAX_THRESHOLD = 4400  # mm（特定线路导高上限）
 
 
 def _parse_date_from_filename(fname: str):
@@ -15,16 +17,10 @@ def _parse_date_from_filename(fname: str):
 
 
 def _parse_line_name(fname: str) -> str:
-    """从文件名中提取线路名称，如 '深圳地铁11号线' 或 '深圳1号线'"""
+    """从文件名中提取线路名称，如 '深圳地铁11号线' 或 '深圳1号线'（仅用于日志显示）"""
     # 兼容两种格式: "深圳地铁N号线" 和 "深圳N号线"
     m = re.search(r"全线路原始数据_(深圳(?:地铁)?\d+号线)_", fname)
     return m.group(1) if m else ""
-
-
-def _parse_line_number(line_name: str):
-    """从线路名称中提取线路数字编号，如 '深圳地铁11号线' -> 11"""
-    m = re.search(r"(\d+)号线", line_name)
-    return int(m.group(1)) if m else None
 
 
 def _find_latest_files(data_dir: str):
@@ -149,17 +145,17 @@ def _grade_hardpoint_line11(val: float) -> str:
     return ""
 
 
-def compute_defect_counts(df_up: pd.DataFrame, df_down: pd.DataFrame, line_name: str = "") -> dict:
+def compute_defect_counts(df_up: pd.DataFrame, df_down: pd.DataFrame,
+                          line_number: str = "") -> dict:
     """合并上下行数据，计算各缺陷等级个数。
 
     Parameters
     ----------
-    line_name : str
-        线路名称（如 '深圳地铁11号线'）。仅当线路为11号线或5号线时，
-        导高驰度和磨耗宽度的计算会过滤 导高 < 4400mm 的数据点。
+    line_number : str
+        从 welcome.html 用户交互获得的线路号，如 "11号线"、"5号线"。
+        仅当线路需要时，导高驰度和磨耗宽度的计算会过滤 导高 < 4400mm 的数据点。
     """
-    line_num = _parse_line_number(line_name)
-    _filter_height_4400 = line_num in (5, 11)  # 5号线/11号线需过滤导高<4400mm
+    _filter_height_4400 = needs_height_filter(line_number)
 
     # ---------- 导高驰度 ----------
     height_diffs = []
@@ -350,11 +346,13 @@ def write_result_excel(counts: dict, outpath: str):
     print(f"已保存: {outpath}")
 
 
-def run(data_dir: str = "original_data", output_dir: str = "output_excel"):
+def run(data_dir: str = "original_data", output_dir: str = "output_excel",
+        line_number: str = ""):
     """供 Web 服务调用：从 data_dir 加载最新日期的上下行文件，
     计算几何参数缺陷统计并写入 table2_1.xlsx。
 
     所有路径均已参数化，支持多用户并发。
+    line_number: 从 welcome.html 用户交互获得的线路号。
     """
     up_path, down_path, date_str = _find_latest_files(data_dir)
 
@@ -385,7 +383,7 @@ def run(data_dir: str = "original_data", output_dir: str = "output_excel"):
     if line_name:
         print(f"  识别线路: {line_name}")
 
-    counts = compute_defect_counts(df_up, df_down, line_name)
+    counts = compute_defect_counts(df_up, df_down, line_number=line_number)
 
     print("\n缺陷统计结果:")
     labels = {

@@ -12,12 +12,14 @@ import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Side, Font
 
+from draw_process import needs_height_filter
+
 # 阈值常量（与 draw_process.py 保持一致）
 HARDPOINT_THRESHOLD = 7 * 10   # 7g, g=10m/s² → 70 m/s²
 PRESSURE_LOW_THRESHOLD = 110   # N
 PRESSURE_HIGH_THRESHOLD = 130  # N
 WEAR_WIDTH_THRESHOLD = 8       # mm
-HEIGHT_MAX_THRESHOLD = 4400    # mm（11号线/5号线导高上限）
+HEIGHT_MAX_THRESHOLD = 4400    # mm（特定线路导高上限）
 
 # 拉出值区间定义（与 draw_process.py 保持一致）
 PULLOUT_RANGE_START = -250
@@ -105,23 +107,15 @@ def _get_pressure_out_of_range_mask(df: pd.DataFrame) -> pd.Series:
     return pd.Series(False, index=df.index)
 
 
-def _is_line_11(df: pd.DataFrame) -> bool:
-    """检查数据是否为11号线或5号线（需要导高 < 4400mm 过滤）"""
-    if "线名" in df.columns and len(df) > 0:
-        line_name = str(df["线名"].iloc[0])
-        return "11号线" in line_name or "5号线" in line_name
-    return False
-
-
-def _get_wear_width_mask(df: pd.DataFrame) -> pd.Series:
-    """磨耗宽度 > 8mm（11号线/5号线时排除导高 > 4400mm 的数据点）"""
+def _get_wear_width_mask(df: pd.DataFrame, line_number: str = "") -> pd.Series:
+    """磨耗宽度 > 8mm（特定线路时排除导高 > 4400mm 的数据点）"""
     if "磨耗宽度(mm)" not in df.columns:
         return pd.Series(False, index=df.index)
 
     mask = pd.to_numeric(df["磨耗宽度(mm)"], errors="coerce") > WEAR_WIDTH_THRESHOLD
 
-    # 11号线/5号线：导高大于4400mm的数据点不统计
-    if _is_line_11(df) and "导高(mm)" in df.columns:
+    # 特定线路：导高大于4400mm的数据点不统计
+    if needs_height_filter(line_number) and "导高(mm)" in df.columns:
         height_mask = pd.to_numeric(df["导高(mm)"], errors="coerce") < HEIGHT_MAX_THRESHOLD
         mask = mask & height_mask
 
@@ -132,8 +126,15 @@ def _apply_pullout_bin(pullout: pd.Series) -> pd.Series:
     return pd.cut(pullout, bins=PULLOUT_BINS, labels=PULLOUT_BIN_LABELS, right=False)
 
 
-def _load_station_order(line_name: str, direction: str, station_json_path: str = "station.json") -> list:
-    """从 station.json 中读取指定线路和行别的站区顺序；找不到则返回空列表（与 draw_process.py 的模糊匹配逻辑一致）。"""
+def _load_station_order(line_number: str = "", direction: str = "",
+                        line_name: str = "",
+                        station_json_path: str = "station.json") -> list:
+    """从 station.json 中读取指定线路和行别的站区顺序。
+
+    优先使用 line_number（来自 welcome.html）+ direction 精确匹配；
+    回退到 line_name（数据列值）模糊匹配。
+    找不到则返回空列表。
+    """
     try:
         with open(station_json_path, "r", encoding="utf-8") as f:
             station_data = json.load(f)
@@ -141,28 +142,41 @@ def _load_station_order(line_name: str, direction: str, station_json_path: str =
         print(f"  警告: 未找到或无法解析 {station_json_path}")
         return []
 
-    key = f"{line_name}-{direction}"
-    if key in station_data:
-        return station_data[key]
-
-    # 模糊匹配
-    for skey in station_data:
-        if skey.startswith(line_name + "-") or line_name.startswith(skey.split("-")[0]):
-            if skey.endswith("-" + direction):
-                print(f"  模糊匹配: 数据线名'{line_name}' -> station.json键'{skey}'")
+    # 优先：使用用户交互提供的 line_number 精确匹配
+    if line_number and direction:
+        target_suffix = f"-{direction}"
+        for skey in station_data:
+            if line_number in skey and skey.endswith(target_suffix):
                 return station_data[skey]
+        print(f"  警告: 未找到线路'{line_number}'行别'{direction}'的站区顺序")
 
-    print(f"  警告: 未找到线名'{line_name}'行别'{direction}'的站区顺序")
+    # 回退：使用数据中的 line_name 模糊匹配（兼容 CLI 模式）
+    if line_name and direction:
+        key = f"{line_name}-{direction}"
+        if key in station_data:
+            return station_data[key]
+        for skey in station_data:
+            if skey.startswith(line_name + "-") or line_name.startswith(skey.split("-")[0]):
+                if skey.endswith("-" + direction):
+                    print(f"  模糊匹配: 数据线名'{line_name}' -> station.json键'{skey}'")
+                    return station_data[skey]
+        print(f"  警告: 未找到线名'{line_name}'行别'{direction}'的站区顺序")
+
     return []
 
 
-def _build_ordered_station_list(df: pd.DataFrame, direction: str, station_json_path: str = "station.json") -> list:
+def _build_ordered_station_list(df: pd.DataFrame, direction: str,
+                                station_json_path: str = "station.json",
+                                line_number: str = "") -> list:
     """将 station.json 的顺序与数据中实际出现的站区合并，返回有序站区列表。"""
+    # 回退：从数据列获取 line_name（兼容 CLI 模式无 line_number 的情况）
     line_name = df["线名"].iloc[0] if "线名" in df.columns and len(df) > 0 else ""
-    if not line_name:
+    if not line_number and not line_name:
         return sorted(df["站区"].dropna().unique())
 
-    ordered = _load_station_order(line_name, direction, station_json_path)
+    ordered = _load_station_order(line_number=line_number, direction=direction,
+                                  line_name=line_name,
+                                  station_json_path=station_json_path)
     ordered_set = set(ordered)
 
     extra = set()
@@ -177,7 +191,7 @@ def _build_ordered_station_list(df: pd.DataFrame, direction: str, station_json_p
 # 构建数据表（单方向）
 # ---------------------------------------------------------------------------
 
-def build_table1(df: pd.DataFrame) -> pd.DataFrame:
+def build_table1(df: pd.DataFrame, line_number: str = "") -> pd.DataFrame:
     """数据表1：按拉出值区间统计"""
     pullout_raw = pd.to_numeric(df["拉出值(mm)"], errors="coerce")
     valid = pullout_raw.notna()
@@ -188,7 +202,7 @@ def build_table1(df: pd.DataFrame) -> pd.DataFrame:
     total_counts = bin_series.value_counts()
     pressure_counts = bin_series[_get_pressure_out_of_range_mask(df_valid)].value_counts()
     hardpoint_counts = bin_series[_get_hardpoint_mask(df_valid)].value_counts()
-    wear_counts = bin_series[_get_wear_width_mask(df_valid)].value_counts()
+    wear_counts = bin_series[_get_wear_width_mask(df_valid, line_number=line_number)].value_counts()
 
     return pd.DataFrame({
         "拉出值区间": PULLOUT_BIN_LABELS,
@@ -199,13 +213,14 @@ def build_table1(df: pd.DataFrame) -> pd.DataFrame:
     })
 
 
-def build_table2(df: pd.DataFrame, station_order: list) -> pd.DataFrame:
+def build_table2(df: pd.DataFrame, station_order: list,
+                 line_number: str = "") -> pd.DataFrame:
     """数据表2：按站点统计，行序按 station_order 排列。"""
     df_valid = df.dropna(subset=["站区"])
 
     pressure_counts = df_valid[_get_pressure_out_of_range_mask(df_valid)]["站区"].value_counts()
     hardpoint_counts = df_valid[_get_hardpoint_mask(df_valid)]["站区"].value_counts()
-    wear_counts = df_valid[_get_wear_width_mask(df_valid)]["站区"].value_counts()
+    wear_counts = df_valid[_get_wear_width_mask(df_valid, line_number=line_number)]["站区"].value_counts()
 
     return pd.DataFrame({
         "站点": station_order,
@@ -295,7 +310,8 @@ def write_table2_excel(df: pd.DataFrame, outpath: str, direction: str):
 
 def run(data_dir: str = "original_data",
         output_dir: str = "output_excel",
-        station_json_path: str = "station.json"):
+        station_json_path: str = "station.json",
+        line_number: str = ""):
     """供 Web 服务调用：从 data_dir 加载最新日期的上下行文件，
 
     生成 4 个汇总表格并写入 output_dir：
@@ -303,6 +319,7 @@ def run(data_dir: str = "original_data",
       - summary_table2_station_上行.xlsx / summary_table2_station_下行.xlsx
 
     所有路径均已参数化，支持多用户并发。
+    line_number: 从 welcome.html 用户交互获得的线路号。
     """
     up_path, down_path, date_str = _find_latest_files(data_dir)
 
@@ -330,7 +347,7 @@ def run(data_dir: str = "original_data",
         print(f"{'=' * 50}")
 
         # 数据表1
-        table1 = build_table1(df)
+        table1 = build_table1(df, line_number=line_number)
         table1 = add_total_row(table1, "拉出值区间")
         print(f"\n数据表1（拉出值区间统计 - {direction}）:")
         print(table1.head(5).to_string(index=False))
@@ -341,8 +358,10 @@ def run(data_dir: str = "original_data",
         write_table1_excel(table1, out1, direction)
 
         # 数据表2
-        station_order = _build_ordered_station_list(df, direction, station_json_path)
-        table2 = build_table2(df, station_order)
+        station_order = _build_ordered_station_list(df, direction,
+                                                      station_json_path,
+                                                      line_number=line_number)
+        table2 = build_table2(df, station_order, line_number=line_number)
         table2 = add_total_row(table2, "站点")
         print(f"\n数据表2（站点统计 - {direction}）:")
         print(table2.head(5).to_string(index=False))
