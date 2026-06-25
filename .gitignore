@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# IDE
+.vscode/
+
+# Claude
+.claude/
+
+# CodeGraph index
+.codegraph/
+
+# Generated output (regeneratable)
+output_excel/
+output_fig/
+defect_report/
+
+# Original data files (large binary)
+original_data/
+
+# Generated HTML reports
+*.html
+!report_template_all.html
+!templates/*.html

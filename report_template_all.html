@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>{{LINE_NUMBER}}号线{{MONTH}}月份检测数据分析报告（模版）</title>
+      <style>
+    /* A4 page layout */
+    @page {
+      size: A4;
+      margin: 2cm 2.5cm 2cm 2.5cm;
+      @bottom-center {
+        content: counter(page);
+        font-size: 10pt;
+        color: #666;
+      }
+    }
+
+    html {
+      color: #1a1a1a;
+      background-color: #fff;
+    }
+    body {
+      margin: 0 auto;
+      font-family: "SimSun", "宋体", "Noto Serif CJK SC", serif;
+      font-size: 12pt;
+      line-height: 1.8;
+      color: #000;
+    }
+
+    /* Cover page styles */
+    p.cover-title {
+      text-align: center;
+      font-size: 18pt;
+      font-weight: bold;
+      margin: 60px 0 30px 0;
+    }
+    div.cover-logo {
+      height: 35vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    div.cover-logo img {
+      max-width: 80%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    div.cover-info {
+      text-align: center;
+      text-indent: 0;
+      line-height: 2.2;
+      font-size: 12pt;
+    }
+    div.cover-info .info-row {
+      text-indent: 0;
+    }
+    div.cover-info .info-label {
+      display: inline-block;
+      width: 5em;
+      text-align: justify;
+      text-align-last: justify;
+    }
+    div.cover-info .info-value {
+      display: inline-block;
+      width: 14em;
+      text-align: center;
+      border-bottom: 1px solid #000;
+      padding-bottom: 2px;
+    }
+
+    /* Section headers */
+    h2 {
+      font-size: 14pt;
+      font-weight: bold;
+      margin-top: 1.5em;
+      page-break-before: always;
+    }
+    h3 {
+      font-size: 13pt;
+      font-weight: bold;
+      margin-top: 1.2em;
+    }
+    h4 {
+      font-size: 12pt;
+      font-weight: bold;
+    }
+
+    /* Body text */
+    p {
+      text-indent: 2em;
+      margin: 0.5em 0;
+    }
+    p.no-indent {
+      text-indent: 0;
+    }
+
+    /* Images */
+    figure {
+      text-align: center;
+      margin: 1em 0;
+      page-break-inside: avoid;
+    }
+    figure img {
+      max-width: 100%;
+      height: auto;
+    }
+    figure figcaption {
+      font-size: 10pt;
+      color: #555;
+      margin-top: 4px;
+    }
+    img.report-fig {
+      max-width: 100%;
+      display: block;
+      margin: 12px auto;
+      page-break-inside: avoid;
+    }
+
+    /* Placeholders */
+    .placeholder {
+      background-color: #fff3cd;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-family: "SF Mono", "Consolas", monospace;
+      font-size: 11pt;
+      color: #856404;
+      white-space: nowrap;
+    }
+
+    /* Tables */
+    table {
+      margin: 0.8em auto;
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 10pt;
+      page-break-inside: avoid;
+    }
+    th {
+      background-color: #4472C4;
+      color: #000;
+      padding: 6px 8px;
+      border: 1px solid #2F5496;
+      text-align: center;
+      font-weight: bold;
+    }
+    td {
+      padding: 4px 8px;
+      border: 1px solid #999;
+      text-align: center;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+
+    /* Excel data references */
+    .excel-ref {
+      color: #0066cc;
+      font-weight: bold;
+    }
+
+    /* Print tweaks */
+    @media print {
+      body { font-size: 11pt; }
+      .placeholder { background-color: #fffde7; }
+      h2 { page-break-before: always; }
+      figure { page-break-inside: avoid; }
+      table { page-break-inside: avoid; }
+    }
+    </style>
+</head>
+<body>
+<div class="cover-logo">
+<img src="logo.png" alt="logo" />
+</div>
+<p class="cover-title">深圳地铁{{LINE_NUMBER}}号线{{MONTH}}月份接触网检测报告</p>
+<div class="cover-info">
+<div class="info-row">
+  <span class="info-label">报告编号</span>：<span class="info-value"><strong>DT-GWJC-YJ0{{LINE_NUMBER}}0{{MONTH}}-2026</strong></span>
+</div>
+<div class="info-row">
+  <span class="info-label">检测周期</span>：<span class="info-value"><strong>月检</strong></span>
+</div>
+<div class="info-row">
+  <span class="info-label">检测单位</span>：<span class="info-value"><strong>维修中心检测专班</strong></span>
+</div>
+<div class="info-row">
+  <span class="info-label">分析人员</span>：<span class="info-value"><strong>{{who_you_are}}</strong></span>
+</div>
+<div class="info-row">
+  <span class="info-label">审核人员</span>：<span class="info-value"><strong>田志福</strong></span>
+</div>
+<div class="info-row">
+  <span class="info-label">批准人员</span>：<span class="info-value"><strong>黎绍锋</strong></span>
+</div>
+<div class="info-row">
+  <span class="info-label">报告日期</span>：<span class="info-value" style="border-bottom: none;">{{DATE_TODAY}}</span>
+</div>
+</div>
+
+<h2>一、检测情况介绍</h2>
+
+<h3>1.1 检测范围</h3>
+<p>本次检测范围为{{LINE_NUMBER}}号线全线（{{START_END}}上下行），共计{{LINE_LONG}}公里，主要检测项目包括接触网几何参数、弓网动态检测、接触网缺陷巡检。</p>
+
+<table>
+<caption>表 1-1 检测线路信息表</caption>
+<tr><th>数据来源</th><th>线路</th><th>检测时间</th><th>行别</th><th>检测区间</th><th>线路公里数</th><th>最高运行速度</th><th>接触网线径</th></tr>
+<tr><td>W102</td><td>{{LINE_NUMBER}}号线</td><td>{{DATE_TEST}}</td><td>上下行</td><td>{{START_END}}</td><td>{{LINE_LONG}}km</td><td>{{MAX_SPEED}}km/h</td><td>{{LINE_WIDTH}}mm²</td></tr>
+</table>
+
+<h3>1.2 检测依据</h3>
+<ol type="1">
+<li><p>《刚性接触网运行管理与检修规程（F版）》</p></li>
+<li><p>《柔性接触网运行管理与检修规程（F版）》</p></li>
+<li><p>《维修中心接触网检测系统（高配）运用管理规定（A版）》</p></li>
+<li><p>《维修中心网轨隧综合检测系统运用管理规定（A版）》</p></li>
+</ol>
+
+<h3>1.3 检测目的</h3>
+<p>通过接触网检测、巡检装置周期性检测线网接触网的几何参数及弓网动态匹配状态，及时发现接触网设备缺陷，可直观评定接触网动态质量，掌握接触网系统当前技术状态。</p>
+<p>通过分析往期接触网几何参数变化情况，横向、纵向对比接触网本体及弓网运行状态变化，为维修、调整、隐患治理提供依据，指导供电车间精准养护，实现接触网科学管理。</p>
+
+<h2>二、检测结果总览</h2>
+
+<h3>2.1 接触网检测几何参数缺陷分类统计</h3>
+
+{{table2_1}}
+<table>
+<caption>表 2-1 接触网检测几何参数缺陷分类统计表</caption>
+<tr><th>序号</th><th>问题类型</th><th>单位</th><th>Ⅰ级</th><th>Ⅱ级</th><th>Ⅲ级</th></tr>
+<tr><td rowspan="5">几何参数缺陷</td><td>导高驰度(mm)</td><td>处</td><td>277</td><td>64</td><td>187</td></tr>
+<tr><td>磨耗宽度（mm）</td><td>处</td><td>0</td><td>804</td><td>620</td></tr>
+<tr><td>接触压力(＜100N)</td><td>处</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>接触压力(＞130N)</td><td>处</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>硬点（g）</td><td>处</td><td>3</td><td>40</td><td>57</td></tr>
+</table>
+<p>备注：Ⅰ类为日常保持标准，Ⅱ类为计划维修标准，Ⅲ类为临时补修标准。</p>
+
+<h3>2.2 接触网巡检缺陷分类统计</h3>
+<p>{{DEFECT_DES}}</p>
+
+{{table2_2}}
+<table>
+<caption>表 2-2 缺陷等级汇总表</caption>
+<tr><th>序号</th><th>缺陷等级</th><th>确认缺陷数量</th></tr>
+<tr><td>1</td><td>Ⅰ类</td><td>33</td></tr>
+<tr><td>2</td><td>Ⅱ类</td><td>33</td></tr>
+<tr><td>3</td><td>Ⅲ类</td><td>0</td></tr>
+<tr><td>合计</td><td></td><td>33</td></tr>
+</table>
+<p>备注：Ⅱ级为安全隐患的缺陷，Ⅲ级为立即处理的缺陷。</p>
+<p>各项点缺陷明细详见表2-3。</p>
+
+{{table2_3}}
+<table>
+<caption>表 2-3 缺陷明细汇总表</caption>
+<tr><th>序号</th><th>缺陷位置</th><th>缺陷描述</th><th>缺陷级别</th><th>汇总</th></tr>
+<tr><td>1</td><td>刚性绝缘类</td><td>绝缘横撑化学锚栓调节余量不足</td><td>Ⅱ类</td><td>15</td></tr>
+<tr><td>2</td><td>刚性支持定位装置</td><td>架空地线底座卡箍备母缺失</td><td>Ⅱ类</td><td>1</td></tr>
+<tr><td>3</td><td>刚性支持定位装置</td><td>化学锚栓备母缺失</td><td>Ⅱ类</td><td>4</td></tr>
+<tr><td>4</td><td>刚性支持定位装置</td><td>T型螺栓备母缺失</td><td>Ⅱ类</td><td>1</td></tr>
+<tr><td>5</td><td>刚性支持定位装置</td><td>化学锚栓调节余量不足</td><td>Ⅱ类</td><td>11</td></tr>
+<tr><td>6</td><td>接触悬挂类</td><td>120型地线线夹螺栓副螺母缺失</td><td>Ⅱ类</td><td>1</td></tr>
+<tr><td>合计</td><td></td><td></td><td></td><td>33</td></tr>
+</table>
+
+<h2>三、整改建议与处理措施</h2>
+
+<h3>3.1 接触网紧急处理建议</h3>
+<ol type="1">
+<li><p>对导高/拉出值严重超标区段立即调整。</p></li>
+<li><p>对磨耗超限接触线安排更换或局部补强。</p></li>
+<li><p>对断裂吊弦立即更换。</p></li>
+<li><p>对破损绝缘子、闪络部位及时更换处理。</p></li>
+<li><p>对打弓、硬点区段进行专项平顺处理。</p></li>
+</ol>
+
+<h3>3.2 接触网常规整治建议</h3>
+<ol type="1">
+<li><p>复紧螺栓、全面检查零部件紧固状态。</p></li>
+<li><p>清洁绝缘子，加强防污、防腐措施。</p></li>
+<li><p>对导高、拉出值进行优化调整，锚段关节进行专项调整。</p></li>
+<li><p>建立重点区段监测台账，视情况缩短巡检周期。</p></li>
+</ol>
+
+<h2>四、往期关键数据对比</h2>
+<h3>4.1 全线硬点分布统计对比</h3>
+<p>对比{{Vehicle_NUMBER}}车{{LINE_NUMBER}}号线{{ALL_FILE_DATE}}检测数据，对全线硬点数值大于7g的数据进行分析统计如下：</p>
+<p>{{HARDPOINT_STATIC_DES1}}</p>
+<figure><img class="report-fig" src="output_fig/graph1_hardpoint_monthly_comparison.png" alt="graph1_hardpoint_monthly_comparison.png"></figure>
+<p>{{HARDPOINT_STATIC_DES2}}</p>
+<ul>
+<li><p><strong>不同拉出值位置硬点分布情况：</strong></p></li>
+</ul>
+<figure><img class="report-fig" src="output_fig/graph2_hardpoint_by_pullout_深圳地铁5号线_上行.png" alt="graph2_hardpoint_by_pullout_深圳地铁5号线_上行.png"></figure>
+<figure><img class="report-fig" src="output_fig/graph2_hardpoint_by_pullout_深圳地铁5号线_下行.png" alt="graph2_hardpoint_by_pullout_深圳地铁5号线_下行.png"></figure>
+<ul>
+<li><p><strong>不同区间硬点分布情况：</strong><strong></strong></p></li>
+</ul>
+<figure><img class="report-fig" src="output_fig/graph3_hardpoint_by_station_深圳地铁5号线_上行.png" alt="graph3_hardpoint_by_station_深圳地铁5号线_上行.png"></figure>
+<figure><img class="report-fig" src="output_fig/graph3_hardpoint_by_station_深圳地铁5号线_下行.png" alt="graph3_hardpoint_by_station_深圳地铁5号线_下行.png"></figure>
+
+{{HARDPOINT_DATA}}
+
+<h3>4.2 全线拉出值分布统计</h3>
+<p>对比{{Vehicle_NUMBER}}车{{LINE_NUMBER}}号线{{ALL_FILE_DATE}}检测数据，对全线拉出值数据进行分析统计如下：</p>
+<ol type="1">
+<p>{{PULLOUT_STATIC_DES1}}</p>
+</ol>
+<figure><img class="report-fig" src="output_fig/graph4_pullout_distribution_深圳地铁5号线_上行.png" alt="graph4_pullout_distribution_深圳地铁5号线_上行.png"></figure>
+<figure><img class="report-fig" src="output_fig/graph4_pullout_distribution_深圳地铁5号线_下行.png" alt="graph4_pullout_distribution_深圳地铁5号线_下行.png"></figure>
+<ol start="3" type="1">
+<li><p>本次检测拉出值不平顺共计有{{STAT_PULLOUT_IRREGULAR_COUNT}}处，{{STAT_PULLOUT_IRREGULAR_DEC}}。根据{{DATE_TEST}}检测数据，筛选{{LINE_NUMBER}}号线部分区段拉出值不平顺现象其具体位置（见附件1）。（区间+杆号）</p></li>
+</ol>
+<h3>4.3 导高高差统计对比</h3>
+<p>对比{{Vehicle_NUMBER}}车{{LINE_NUMBER}}号线{{ALL_FILE_DATE}}检测数据，对全线接触网定位点之间导高高差进行分析统计，按数值表现情况统计如下：</p>
+<div style="display: flex; justify-content: center; gap: 12px; page-break-inside: avoid;">
+<figure style="flex: 1; max-width: 48%; margin: 0;"><img class="report-fig" style="max-width: 100%;" src="output_fig/graph5_height_diff_pie_深圳地铁5号线_上行.png" alt="graph5_height_diff_pie_深圳地铁5号线_上行.png"></figure>
+<figure style="flex: 1; max-width: 48%; margin: 0;"><img class="report-fig" style="max-width: 100%;" src="output_fig/graph5_height_diff_pie_深圳地铁5号线_下行.png" alt="graph5_height_diff_pie_深圳地铁5号线_下行.png"></figure>
+</div>
+<p>{{HEIGHT_DIFF_DES}}</p>
+
+{{HEIGHT_DIFF_DATA}}
+
+<h3>4.4 接触压力分布对比</h3>
+<p>对比{{Vehicle_NUMBER}}车{{LINE_NUMBER}}号线{{ALL_FILE_DATE}}检测数据，对全线接触压力和数值大于130N或者小于110N的数据进行分析统计，分布情况统计如下：</p>
+<p>{{PRESSURE_DES}}</p>
+<ul>
+<li><p><strong>上下行不同区间接触压力超限分布情况</strong></p></li>
+</ul>
+<figure><img class="report-fig" src="output_fig/graph6_pressure_by_station_深圳地铁5号线_上行.png" alt="graph6_pressure_by_station_深圳地铁5号线_上行.png"></figure>
+<figure><img class="report-fig" src="output_fig/graph6_pressure_by_station_深圳地铁5号线_下行.png" alt="graph6_pressure_by_station_深圳地铁5号线_下行.png"></figure>
+{{PRESSURE_OVERLIMIT_TABLE}}
+
+<h3>4.5 磨耗分布对比</h3>
+<p>对比{{Vehicle_NUMBER}}车{{LINE_NUMBER}}号线{{ALL_FILE_DATE}}检测数据，对接触线磨耗宽面超过8mm的数量及位置进行统计，分析如下：</p>
+<ol type="1">
+<p>{{WEAR_WIDTH_DES1}}</p>
+</ol>
+<figure><img class="report-fig" src="output_fig/graph7_wear_width_distribution_深圳地铁5号线_上行.png" alt="graph7_wear_width_distribution_深圳地铁5号线_上行.png"></figure>
+<figure><img class="report-fig" src="output_fig/graph7_wear_width_distribution_深圳地铁5号线_下行.png" alt="graph7_wear_width_distribution_深圳地铁5号线_下行.png"></figure>
+<ol start="2" type="1">
+<p>{{WEAR_WIDTH_DES2}}</p>
+</ol>
+<figure><img class="report-fig" src="output_fig/graph9_wear_width_by_pullout_深圳地铁5号线_上行.png" alt="graph9_wear_width_by_pullout_深圳地铁5号线_上行.png"></figure>
+<figure><img class="report-fig" src="output_fig/graph9_wear_width_by_pullout_深圳地铁5号线_下行.png" alt="graph9_wear_width_by_pullout_深圳地铁5号线_下行.png"></figure>
+<ol start="3" type="1">
+<p>{{WEAR_WIDTH_DES3}}</p>
+</ol>
+<figure><img class="report-fig" src="output_fig/graph8_wear_width_by_station_深圳地铁5号线_上行.png" alt="graph8_wear_width_by_station_深圳地铁5号线_上行.png"></figure>
+<figure><img class="report-fig" src="output_fig/graph8_wear_width_by_station_深圳地铁5号线_下行.png" alt="graph8_wear_width_by_station_深圳地铁5号线_下行.png"></figure>
+{{WEAR_WIDTH_DATA}}
+
+<h2>五、附件</h2>
+<ol type="1">
+<li><p>{{LINE_NUMBER}}号线部分区段拉出值不平顺位置统计</p></li>
+<li><p>几何参数、磨耗原始数据表</p></li>
+<li><p>典型缺陷统计表</p></li>
+</ol>
+<hr>
+
+<p style="text-align: right; margin-top: 40px;">
+维修中心检测专班<br>
+<span class="placeholder">{{DATE_TODAY}}</span>
+</p>
+
+</body>
+</html>

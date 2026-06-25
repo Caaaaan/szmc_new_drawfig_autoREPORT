@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>W102分析报告系统</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: linear-gradient(135deg, #1a3a5c 0%, #2d6aa0 50%, #1a3a5c 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .welcome-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    padding: 48px 56px;
+    text-align: center;
+    max-width: 460px;
+    width: 90%;
+  }
+
+  .welcome-logo {
+    margin-bottom: 16px;
+  }
+
+  .welcome-logo img {
+    max-width: 120px;
+    height: auto;
+  }
+
+  .welcome-title {
+    font-size: 26pt;
+    font-weight: bold;
+    color: #1a3a5c;
+    margin: 0 0 8px 0;
+    letter-spacing: 2px;
+  }
+
+  .welcome-subtitle {
+    font-size: 11pt;
+    color: #888;
+    margin: 0 0 32px 0;
+  }
+
+  .welcome-form {
+    text-align: left;
+  }
+
+  .welcome-form label {
+    display: block;
+    font-size: 11pt;
+    color: #333;
+    margin-bottom: 6px;
+    font-weight: bold;
+  }
+
+  .welcome-input {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14pt;
+    border: 2px solid #d0d0d0;
+    border-radius: 6px;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+
+  .welcome-input:focus {
+    border-color: #2d6aa0;
+  }
+
+  .welcome-input.error {
+    border-color: #e74c3c;
+    background: #fef5f5;
+  }
+
+  .welcome-btn {
+    display: block;
+    width: 100%;
+    margin-top: 18px;
+    padding: 11px 0;
+    font-size: 15pt;
+    font-weight: bold;
+    color: #fff;
+    background: #2d6aa0;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    letter-spacing: 4px;
+    transition: background 0.2s;
+  }
+
+  .welcome-btn:hover {
+    background: #1a3a5c;
+  }
+
+  .welcome-btn:active {
+    background: #15304d;
+  }
+
+  .welcome-error {
+    color: #e74c3c;
+    font-size: 10pt;
+    margin-top: 4px;
+    display: none;
+  }
+
+  .welcome-error.show {
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<div class="welcome-card">
+  <div class="welcome-logo">
+    <img src="/static/logo.png" alt="logo" />
+  </div>
+  <h1 class="welcome-title">W102分析报告系统</h1>
+  <p class="welcome-subtitle">深圳地铁接触网检测数据分析报告</p>
+
+  <form class="welcome-form" id="loginForm" method="post" action="/">
+    <label for="lineNumber">选择线路</label>
+    <select
+      id="lineNumber"
+      name="line_number"
+      class="welcome-input"
+      required
+    >
+      <option value="" disabled selected>请选择线路号</option>
+      <option value="1号线">1号线</option>
+      <option value="2号线">2号线</option>
+      <option value="5号线">5号线</option>
+      <option value="7号线">7号线</option>
+      <option value="9号线">9号线</option>
+      <option value="11号线">11号线</option>
+    </select>
+    <p class="welcome-error" id="lineError">请选择线路号</p>
+
+    <label for="analystName" style="margin-top: 18px;">分析人员姓名</label>
+    <input
+      type="text"
+      id="analystName"
+      name="who_you_are"
+      class="welcome-input"
+      placeholder="请输入您的姓名"
+      autofocus
+      required
+    />
+    <p class="welcome-error" id="welcomeError">请输入分析人员姓名</p>
+    <button type="submit" class="welcome-btn">登 录</button>
+  </form>
+</div>
+
+<script>
+// Client-side validation before submit
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+  var lineSelect = document.getElementById('lineNumber');
+  var lineError = document.getElementById('lineError');
+  var input = document.getElementById('analystName');
+  var error = document.getElementById('welcomeError');
+  var valid = true;
+
+  // Validate line selection
+  if (!lineSelect.value) {
+    e.preventDefault();
+    lineSelect.classList.add('error');
+    lineError.classList.add('show');
+    valid = false;
+  } else {
+    lineSelect.classList.remove('error');
+    lineError.classList.remove('show');
+  }
+
+  // Validate name
+  if (!input.value.trim()) {
+    e.preventDefault();
+    input.classList.add('error');
+    error.classList.add('show');
+    input.focus();
+    valid = false;
+  } else {
+    input.classList.remove('error');
+    error.classList.remove('show');
+  }
+
+  if (!valid) {
+    return;
+  }
+});
+
+// Clear error on line selection
+document.getElementById('lineNumber').addEventListener('change', function() {
+  this.classList.remove('error');
+  document.getElementById('lineError').classList.remove('show');
+});
+
+// Clear error on name input
+document.getElementById('analystName').addEventListener('input', function() {
+  this.classList.remove('error');
+  document.getElementById('welcomeError').classList.remove('show');
+});
+</script>
+
+</body>
+</html>

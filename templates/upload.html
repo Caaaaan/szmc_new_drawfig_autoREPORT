@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>接触网检测数据分析报告系统</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f0f2f5; color: #333; }
+  .container { max-width: 750px; margin: 40px auto; padding: 0 20px; }
+  h1 { text-align: center; font-size: 22px; margin-bottom: 8px; color: #1a1a1a; }
+  .subtitle { text-align: center; color: #888; font-size: 13px; margin-bottom: 5px; }
+  .user-info { text-align: center; color: #1890ff; font-size: 12px; margin-bottom: 30px; }
+  .card { background: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 20px; }
+  .card h2 { font-size: 16px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+  .card h2 .dir-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-right: 6px; }
+  .dir-up { background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+  .dir-down { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+  .form-group { margin-bottom: 18px; }
+  .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #555; }
+  .form-group .hint { font-size: 12px; color: #999; font-weight: normal; margin-left: 6px; }
+  .form-group input[type="text"] { width: 100%; padding: 10px 12px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px; transition: border-color .2s; }
+  .form-group input[type="text"]:focus { border-color: #1890ff; outline: none; box-shadow: 0 0 0 2px rgba(24,144,255,0.15); }
+  .file-area { border: 2px dashed #d9d9d9; border-radius: 8px; padding: 24px; text-align: center; transition: border-color .2s; cursor: pointer; }
+  .file-area:hover { border-color: #1890ff; }
+  .file-area.up { min-height: 100px; }
+  .file-area.down { min-height: 100px; }
+  .file-area p { color: #999; font-size: 13px; }
+  .file-area .icon { font-size: 36px; margin-bottom: 8px; }
+  .btn { display: inline-block; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; border: none; text-decoration: none; }
+  .btn-primary { background: #1890ff; color: #fff; }
+  .btn-primary:hover { background: #1677cc; }
+  .btn-primary:disabled { background: #b0b0b0; cursor: not-allowed; }
+  .btn-danger { background: #fff; color: #ff4d4f; border: 1px solid #ff4d4f; font-size:12px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+  .btn-danger:hover { background: #fff2f0; }
+  .file-list { margin-top: 10px; }
+  .file-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: #fafafa; border-radius: 4px; margin-bottom: 4px; font-size: 13px; }
+  .file-item .name { color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .empty-hint { font-size: 13px; color: #ccc; margin-top: 8px; }
+  .error { background: #fff2f0; border: 1px solid #ffccc7; color: #cf1322; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-top: 12px; display: none; }
+
+  .task-list { margin-top: 0; }
+  .task-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .task-table th { background: #fafafa; padding: 10px 12px; text-align: left; border-bottom: 2px solid #e8e8e8; color: #555; }
+  .task-table td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
+  .task-table tr:hover td { background: #fafafa; }
+  .status-badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; }
+  .status-done { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+  .status-running { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+  .status-failed { background: #fff2f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+  .status-pending { background: #f5f5f5; color: #888; border: 1px solid #d9d9d9; }
+  .task-link { color: #1890ff; text-decoration: none; }
+  .task-link:hover { text-decoration: underline; }
+  .no-tasks { text-align: center; color: #ccc; padding: 20px 0; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>接触网检测数据分析报告系统</h1>
+  <p class="subtitle">上传原始检测数据和缺陷报告，自动生成完整分析报告</p>
+  <p class="user-info">
+    当前用户: {{ user_ip }}
+    {% if line_number %} | 线路: <strong>{{ line_number }}</strong>{% endif %}
+    {% if who_you_are %} | 分析人员: <strong>{{ who_you_are }}</strong>{% endif %}
+  </p>
+
+  <form id="uploadForm" enctype="multipart/form-data">
+    <!-- 1. 上行数据 -->
+    <div class="card">
+      <h2><span class="dir-tag dir-up">上行</span> 1. 上传上行数据文件</h2>
+      <div class="form-group">
+        <label>Excel 数据文件 <span class="hint">（上行方向 .xlsx，可多次选择）</span></label>
+        <div class="file-area up" onclick="document.getElementById('excelUpInput').click()">
+          <p class="icon">&#128196;</p>
+          <p>点击选择上行 .xlsx 文件（可多选，可多次添加）</p>
+        </div>
+        <input type="file" id="excelUpInput" accept=".xlsx" multiple style="display:none" onchange="addFiles('excelUp')">
+        <div class="file-list" id="excelUpList">
+          <p class="empty-hint">尚未选择文件</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 下行数据 -->
+    <div class="card">
+      <h2><span class="dir-tag dir-down">下行</span> 2. 上传下行数据文件</h2>
+      <div class="form-group">
+        <label>Excel 数据文件 <span class="hint">（下行方向 .xlsx，可多次选择）</span></label>
+        <div class="file-area down" onclick="document.getElementById('excelDownInput').click()">
+          <p class="icon">&#128196;</p>
+          <p>点击选择下行 .xlsx 文件（可多选，可多次添加）</p>
+        </div>
+        <input type="file" id="excelDownInput" accept=".xlsx" multiple style="display:none" onchange="addFiles('excelDown')">
+        <div class="file-list" id="excelDownList">
+          <p class="empty-hint">尚未选择文件</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 缺陷报告 -->
+    <div class="card">
+      <h2>3. 上传缺陷报告</h2>
+      <div class="form-group">
+        <label>defect_report 文件 <span class="hint">（.xlsx / .docx，可选，可多次选择）</span></label>
+        <div class="file-area" onclick="document.getElementById('defectInput').click()">
+          <p class="icon">&#128203;</p>
+          <p>点击选择缺陷报告文件（可多选，可多次添加）</p>
+        </div>
+        <input type="file" id="defectInput" accept=".xlsx,.docx" multiple style="display:none" onchange="addFiles('defect')">
+        <div class="file-list" id="defectList">
+          <p class="empty-hint">尚未选择文件</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 报告参数 -->
+    <div class="card">
+      <h2>4. 填写报告参数</h2>
+      <div class="form-group">
+        <label>始末区间 <span class="hint">（如：红岭南-碧头）</span></label>
+        <input type="text" name="start_end" placeholder="如：红岭南-碧头">
+      </div>
+      <div class="form-group">
+        <label>拉出值不平顺处数量 <span class="hint">（可选）</span></label>
+        <input type="text" name="stat_pullout_irregular_count" placeholder="如：35处">
+      </div>
+      <div class="form-group">
+        <label>拉出值不平顺变化描述 <span class="hint">（可选）</span></label>
+        <input type="text" name="stat_pullout_irregular_dec" placeholder="如：较上次基本持平">
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" id="submitBtn" style="width:100%;padding:12px;font-size:16px;">开始生成报告</button>
+    <div class="error" id="errorMsg"></div>
+  </form>
+
+  {% if user_tasks %}
+  <div class="card task-list">
+    <h2>我的历史任务</h2>
+    <table class="task-table">
+      <thead>
+        <tr><th>创建时间</th><th>状态</th><th>进度</th><th>操作</th></tr>
+      </thead>
+      <tbody>
+      {% for t in user_tasks %}
+        <tr>
+          <td>{{ t.created_at }}</td>
+          <td>
+            {% if t.status == 'done' %}
+              <span class="status-badge status-done">已完成</span>
+            {% elif t.status == 'running' %}
+              <span class="status-badge status-running">处理中</span>
+            {% elif t.status == 'failed' %}
+              <span class="status-badge status-failed">失败</span>
+            {% else %}
+              <span class="status-badge status-pending">等待中</span>
+            {% endif %}
+          </td>
+          <td style="font-size:12px;color:#888;">{{ t.get('progress', 0) }}%</td>
+          <td>
+            <a class="task-link" href="/status/{{ t.task_id }}">查看详情</a>
+            {% if t.status == 'done' %}
+              | <a class="task-link" href="/api/tasks/{{ t.task_id }}/download/pdf">下载 PDF</a>
+            {% elif t.status == 'failed' and t.last_step < 7 %}
+              | <a class="task-link resume-link" href="#" data-task-id="{{ t.task_id }}">续跑</a>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+// ---- Client-side file queue management ----
+const excelFilesUp = new DataTransfer();
+const excelFilesDown = new DataTransfer();
+const defectFiles = new DataTransfer();
+
+function getDataTransfer(type) {
+  if (type === 'excelUp') return excelFilesUp;
+  if (type === 'excelDown') return excelFilesDown;
+  if (type === 'defect') return defectFiles;
+  return null;
+}
+
+function addFiles(type) {
+  const input = document.getElementById(type + 'Input');
+  const dt = getDataTransfer(type);
+  if (!dt) return;
+  for (const f of input.files) {
+    // 去重（按文件名）
+    let dup = false;
+    for (let i = 0; i < dt.items.length; i++) {
+      if (dt.items[i].name === f.name) { dup = true; break; }
+    }
+    if (!dup) dt.items.add(f);
+  }
+  renderFileList(type);
+  input.value = '';
+}
+
+function removeFile(type, idx) {
+  const dt = getDataTransfer(type);
+  if (!dt) return;
+  const next = new DataTransfer();
+  for (let i = 0; i < dt.items.length; i++) {
+    if (i !== idx) next.items.add(dt.items[i].getAsFile());
+  }
+  dt.items.clear();
+  for (let i = 0; i < next.items.length; i++) dt.items.add(next.items[i].getAsFile());
+  renderFileList(type);
+}
+
+function renderFileList(type) {
+  const dt = getDataTransfer(type);
+  const container = document.getElementById(type + 'List');
+  if (!dt || dt.items.length === 0) {
+    container.innerHTML = '<p class="empty-hint">尚未选择文件</p>';
+    return;
+  }
+  container.innerHTML = Array.from(dt.files).map((f, i) =>
+    '<div class="file-item"><span class="name">' + f.name + '</span><button class="btn btn-danger" type="button" onclick="removeFile(\'' + type + '\',' + i + ')">删除</button></div>'
+  ).join('');
+}
+
+// ---- Form submit ----
+document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const errorEl = document.getElementById('errorMsg');
+  errorEl.style.display = 'none';
+
+  if (excelFilesUp.items.length + excelFilesDown.items.length === 0) {
+    errorEl.textContent = '请至少添加一个数据文件（上行或下行）';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '正在提交...';
+
+  try {
+    const formData = new FormData(e.target);
+    // 用 JS 管理的 file queue 替换原生 <input> 的 files
+    formData.delete('excel_files_up');
+    formData.delete('excel_files_down');
+    formData.delete('defect_files');
+    for (const f of excelFilesUp.files) formData.append('excel_files_up', f);
+    for (const f of excelFilesDown.files) formData.append('excel_files_down', f);
+    for (const f of defectFiles.files) formData.append('defect_files', f);
+
+    const resp = await fetch('/api/tasks', { method: 'POST', body: formData });
+    const data = await resp.json();
+    if (data.error) {
+      errorEl.textContent = data.error;
+      errorEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = '开始生成报告';
+    } else if (data.redirect) {
+      window.location.href = data.redirect;
+    }
+  } catch (err) {
+    errorEl.textContent = '网络错误，请重试';
+    errorEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = '开始生成报告';
+  }
+});
+
+// 续跑按钮
+document.querySelectorAll('.resume-link').forEach(link => {
+  link.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const taskId = link.dataset.taskId;
+    if (!confirm('确认从断点续跑该任务？')) return;
+    link.textContent = '续跑中...';
+    link.style.pointerEvents = 'none';
+    try {
+      const resp = await fetch('/api/tasks/' + taskId + '/resume', { method: 'POST' });
+      const data = await resp.json();
+      if (data.error) { alert('续跑失败: ' + data.error); link.textContent = '续跑'; link.style.pointerEvents = ''; }
+      else { window.location.href = '/status/' + taskId; }
+    } catch (err) { alert('网络错误，请重试'); link.textContent = '续跑'; link.style.pointerEvents = ''; }
+  });
+});
+</script>
+</body>
+</html>
