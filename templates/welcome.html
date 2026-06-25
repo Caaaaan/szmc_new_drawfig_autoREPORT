@@ -7,159 +7,266 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  :root {
+    --ink: #1d1d1f;
+    --muted: #6e6e73;
+    --blue: #0066cc;
+    --blue-focus: #0071e3;
+    --canvas: #ffffff;
+    --parchment: #f5f5f7;
+    --soft: #f5f5f5;
+    --hairline: #e0e0e0;
+  }
+
   body {
-    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
-    background: linear-gradient(135deg, #1a3a5c 0%, #2d6aa0 50%, #1a3a5c 100%);
     min-height: 100vh;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    background: var(--canvas);
+  }
+
+  .site-nav {
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 28px;
+    background: #000;
+    color: #fff;
+    font-size: 12px;
+    letter-spacing: -0.12px;
   }
 
-  .welcome-card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    padding: 48px 56px;
-    text-align: center;
-    max-width: 460px;
-    width: 90%;
-  }
-
-  .welcome-logo {
-    margin-bottom: 16px;
-  }
-
-  .welcome-logo img {
-    max-width: 120px;
+  .site-nav img {
+    width: 28px;
     height: auto;
+    filter: brightness(0) invert(1);
+  }
+
+  .hero-tile {
+    min-height: calc(100vh - 44px);
+    display: grid;
+    grid-template-rows: auto 1fr;
+    background: var(--parchment);
+  }
+
+  .hero-copy {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 56px 24px 28px;
+  }
+
+  .eyebrow {
+    font-size: 13px;
+    line-height: 1.3;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 10px;
   }
 
   .welcome-title {
-    font-size: 26pt;
-    font-weight: bold;
-    color: #1a3a5c;
-    margin: 0 0 8px 0;
-    letter-spacing: 2px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
+    font-size: clamp(40px, 7vw, 74px);
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    margin-bottom: 14px;
   }
 
   .welcome-subtitle {
-    font-size: 11pt;
-    color: #888;
-    margin: 0 0 32px 0;
+    max-width: 680px;
+    margin: 0 auto;
+    font-size: clamp(19px, 2.4vw, 28px);
+    font-weight: 400;
+    line-height: 1.22;
+    letter-spacing: -0.01em;
+    color: var(--ink);
   }
 
-  .welcome-form {
-    text-align: left;
+  .hero-stage {
+    position: relative;
+    min-height: 480px;
+    display: grid;
+    align-items: end;
+    overflow: hidden;
   }
 
-  .welcome-form label {
+  .hero-stage img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center bottom;
+  }
+
+  .login-card {
+    position: relative;
+    z-index: 2;
+    width: min(440px, calc(100% - 32px));
+    margin: 0 auto 40px;
+    padding: 24px;
+    border: 1px solid var(--hairline);
+    border-radius: 18px;
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(18px);
+  }
+
+  .welcome-form { display: grid; gap: 16px; text-align: left; }
+
+  .field-block label {
     display: block;
-    font-size: 11pt;
-    color: #333;
-    margin-bottom: 6px;
-    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 1.29;
+    letter-spacing: -0.014em;
+    color: var(--ink);
+    font-weight: 600;
   }
 
   .welcome-input {
     display: block;
     width: 100%;
-    padding: 10px 14px;
-    font-size: 14pt;
-    border: 2px solid #d0d0d0;
-    border-radius: 6px;
+    height: 46px;
+    padding: 0 18px;
+    font: inherit;
+    font-size: 17px;
+    color: var(--ink);
+    border: 1px solid rgba(0,0,0,.1);
+    border-radius: 9999px;
+    background: var(--canvas);
     outline: none;
-    box-sizing: border-box;
-    transition: border-color 0.2s;
-    font-family: inherit;
+    transition: border-color .18s, box-shadow .18s;
   }
 
   .welcome-input:focus {
-    border-color: #2d6aa0;
+    border-color: var(--blue-focus);
+    box-shadow: 0 0 0 3px rgba(0,113,227,.16);
   }
 
   .welcome-input.error {
-    border-color: #e74c3c;
-    background: #fef5f5;
+    border-color: #d30005;
+    box-shadow: 0 0 0 3px rgba(211,0,5,.1);
   }
 
   .welcome-btn {
-    display: block;
     width: 100%;
-    margin-top: 18px;
-    padding: 11px 0;
-    font-size: 15pt;
-    font-weight: bold;
-    color: #fff;
-    background: #2d6aa0;
+    height: 48px;
     border: none;
-    border-radius: 6px;
+    border-radius: 9999px;
+    background: #111;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0;
     cursor: pointer;
-    letter-spacing: 4px;
-    transition: background 0.2s;
+    transition: transform .16s, opacity .16s;
   }
 
-  .welcome-btn:hover {
-    background: #1a3a5c;
-  }
-
-  .welcome-btn:active {
-    background: #15304d;
-  }
+  .welcome-btn:hover { opacity: .88; }
+  .welcome-btn:active { transform: scale(.95); }
 
   .welcome-error {
-    color: #e74c3c;
-    font-size: 10pt;
-    margin-top: 4px;
+    color: #d30005;
+    font-size: 12px;
+    line-height: 1.3;
+    margin-top: 6px;
     display: none;
   }
 
-  .welcome-error.show {
-    display: block;
+  .welcome-error.show { display: block; }
+
+  .quick-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .quick-stats div {
+    padding: 10px 8px;
+    border-radius: 9999px;
+    background: var(--soft);
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .quick-stats strong {
+    color: var(--ink);
+    font-size: 14px;
+    margin-right: 4px;
+  }
+
+  @media (max-width: 760px) {
+    .site-nav { justify-content: space-between; padding: 0 16px; gap: 12px; }
+    .site-nav span:nth-child(n+3) { display: none; }
+    .hero-copy { padding-top: 40px; }
+    .hero-stage { min-height: 560px; }
+    .login-card { margin-bottom: 168px; }
+    .quick-stats { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
+{% from "assistant_character.html" import assistant_character %}
 
-<div class="welcome-card">
-  <div class="welcome-logo">
-    <img src="/static/logo.png" alt="logo" />
-  </div>
-  <h1 class="welcome-title">W102分析报告系统</h1>
-  <p class="welcome-subtitle">深圳地铁接触网检测数据分析报告</p>
+<nav class="site-nav" aria-label="系统导航">
+  <img src="/static/logo.png" alt="logo" />
+  <span>W102</span>
+  <span>线路检测</span>
+  <span>图表生成</span>
+  <span>报告交付</span>
+</nav>
 
-  <form class="welcome-form" id="loginForm" method="post" action="/">
-    <label for="lineNumber">选择线路</label>
-    <select
-      id="lineNumber"
-      name="line_number"
-      class="welcome-input"
-      required
-    >
-      <option value="" disabled selected>请选择线路号</option>
-      <option value="1号线">1号线</option>
-      <option value="2号线">2号线</option>
-      <option value="5号线">5号线</option>
-      <option value="7号线">7号线</option>
-      <option value="9号线">9号线</option>
-      <option value="11号线">11号线</option>
-    </select>
-    <p class="welcome-error" id="lineError">请选择线路号</p>
+<main class="hero-tile">
+  <section class="hero-copy">
+    <p class="eyebrow">SMART CATENARY REPORT</p>
+    <h1 class="welcome-title">W102分析报告系统</h1>
+    <p class="welcome-subtitle">从检测数据到完整报告，让轨道运维分析像产品发布一样清晰。</p>
+  </section>
 
-    <label for="analystName" style="margin-top: 18px;">分析人员姓名</label>
-    <input
-      type="text"
-      id="analystName"
-      name="who_you_are"
-      class="welcome-input"
-      placeholder="请输入您的姓名"
-      autofocus
-      required
-    />
-    <p class="welcome-error" id="welcomeError">请输入分析人员姓名</p>
-    <button type="submit" class="welcome-btn">登 录</button>
-  </form>
-</div>
+  <section class="hero-stage">
+    <img src="/static/rail-tech-hero.png" alt="" />
+    <div class="login-card">
+      <form class="welcome-form" id="loginForm" method="post" action="/">
+        <div class="field-block">
+          <label for="lineNumber">选择线路</label>
+          <select id="lineNumber" name="line_number" class="welcome-input" required>
+            <option value="" disabled selected>请选择线路号</option>
+            <option value="1号线">1号线</option>
+            <option value="2号线">2号线</option>
+            <option value="5号线">5号线</option>
+            <option value="7号线">7号线</option>
+            <option value="9号线">9号线</option>
+            <option value="11号线">11号线</option>
+          </select>
+          <p class="welcome-error" id="lineError">请选择线路号</p>
+        </div>
+
+        <div class="field-block">
+          <label for="analystName">分析人员姓名</label>
+          <input type="text" id="analystName" name="who_you_are" class="welcome-input" placeholder="请输入您的姓名" autofocus required />
+          <p class="welcome-error" id="welcomeError">请输入分析人员姓名</p>
+        </div>
+
+        <button type="submit" class="welcome-btn">登录</button>
+      </form>
+
+      <div class="quick-stats" aria-hidden="true">
+        <div><strong>7</strong>步骤</div>
+        <div><strong>AI</strong>分析</div>
+        <div><strong>PDF</strong>输出</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+{{ assistant_character('idle', '请选择线路和分析人员，我会陪你完成报告生成。') }}
 
 <script>
 // Client-side validation before submit
@@ -170,7 +277,6 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
   var error = document.getElementById('welcomeError');
   var valid = true;
 
-  // Validate line selection
   if (!lineSelect.value) {
     e.preventDefault();
     lineSelect.classList.add('error');
@@ -181,7 +287,6 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     lineError.classList.remove('show');
   }
 
-  // Validate name
   if (!input.value.trim()) {
     e.preventDefault();
     input.classList.add('error');
@@ -198,13 +303,11 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
   }
 });
 
-// Clear error on line selection
 document.getElementById('lineNumber').addEventListener('change', function() {
   this.classList.remove('error');
   document.getElementById('lineError').classList.remove('show');
 });
 
-// Clear error on name input
 document.getElementById('analystName').addEventListener('input', function() {
   this.classList.remove('error');
   document.getElementById('welcomeError').classList.remove('show');

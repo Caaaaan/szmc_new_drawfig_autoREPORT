@@ -6,85 +6,396 @@
 <title>任务进度 — 检测报告系统</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f0f2f5; color: #333; }
-  .container { max-width: 720px; margin: 40px auto; padding: 0 20px 60px; }
-  h1 { text-align: center; font-size: 20px; margin-bottom: 30px; }
-  .card { background: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 20px; }
-  .task-id { font-size: 12px; color: #aaa; text-align: center; margin-bottom: 20px; word-break: break-all; }
-  .progress-bar { width: 100%; height: 12px; background: #e8e8e8; border-radius: 6px; overflow: hidden; margin-bottom: 16px; }
-  .progress-fill { height: 100%; background: #1890ff; border-radius: 6px; transition: width 0.5s ease; }
-  .progress-fill.done { background: #52c41a; }
-  .progress-fill.failed { background: #ff4d4f; }
-  .progress-fill.intermediate { background: #fa8c16; }
-  .status-text { text-align: center; font-size: 15px; margin-bottom: 8px; }
-  .status-msg { text-align: center; font-size: 13px; color: #888; margin-bottom: 20px; }
-  .error-msg { background: #fff2f0; border: 1px solid #ffccc7; color: #cf1322; padding: 12px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; word-break: break-all; }
 
-  /* Intermediate preview */
-  .intermediate-preview { margin-bottom: 20px; }
-  .intermediate-preview h3 { font-size: 15px; margin-bottom: 14px; color: #333; padding-bottom: 8px; border-bottom: 1px solid #eee; }
-  .intermediate-preview h3 .badge { display: inline-block; background: #fa8c16; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; vertical-align: middle; }
-  .figure-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; max-height: 500px; overflow-y: auto; padding: 2px; }
-  .figure-card { border: 1px solid #e8e8e8; border-radius: 6px; overflow: hidden; background: #fafafa; transition: box-shadow 0.2s; cursor: pointer; }
-  .figure-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
-  .figure-card img { width: 100%; height: 140px; object-fit: contain; background: #fff; display: block; }
-  .figure-card .fig-label { padding: 6px 8px; font-size: 11px; color: #666; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  :root {
+    --ink: #1d1d1f;
+    --black: #111111;
+    --muted: #707072;
+    --blue: #0066cc;
+    --blue-on-dark: #2997ff;
+    --canvas: #ffffff;
+    --parchment: #f5f5f7;
+    --soft: #f5f5f5;
+    --hairline: #e0e0e0;
+    --sale: #d30005;
+    --success: #007d48;
+    --orange: #b65f00;
+  }
 
-  /* Downloads row */
-  .downloads { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-  .download-btn { display: inline-block; padding: 10px 20px; border-radius: 6px; font-size: 14px; text-decoration: none; font-weight: 600; transition: background 0.2s; border: none; cursor: pointer; }
-  .btn-primary { background: #1890ff; color: #fff; }
-  .btn-primary:hover { background: #1677cc; }
-  .btn-secondary { background: #f5f5f5; color: #333; border: 1px solid #d9d9d9; }
-  .btn-secondary:hover { background: #e8e8e8; }
-  .btn-warning { background: #fa8c16; color: #fff; }
-  .btn-warning:hover { background: #e0780e; }
-  .btn-success { background: #52c41a; color: #fff; }
-  .btn-success:hover { background: #45a515; }
-  .back-link { text-align: center; margin-top: 20px; }
-  .back-link a { color: #888; font-size: 13px; text-decoration: none; }
-  .back-link a:hover { color: #1890ff; }
-  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #e8e8e8; border-top-color: #1890ff; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
+  body {
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    background: var(--parchment);
+  }
+
+  .global-nav {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    background: #000;
+    color: #fff;
+    font-size: 12px;
+    letter-spacing: -0.12px;
+  }
+
+  .global-nav img {
+    width: 28px;
+    height: auto;
+    filter: brightness(0) invert(1);
+  }
+
+  .sub-nav {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 24px;
+    background: rgba(245,245,247,.82);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(0,0,0,.08);
+  }
+
+  .sub-nav strong {
+    font-size: 21px;
+    line-height: 1.19;
+    letter-spacing: .011em;
+  }
+
+  .task-id {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.3;
+    word-break: break-all;
+    text-align: right;
+  }
+
+  .hero-tile {
+    min-height: 420px;
+    display: grid;
+    align-items: start;
+    justify-items: center;
+    text-align: center;
+    padding: 58px 24px 0;
+    background: var(--canvas);
+    overflow: hidden;
+  }
+
+  .hero-copy {
+    position: relative;
+    z-index: 1;
+  }
+
+  .eyebrow {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
+    font-size: clamp(40px, 6vw, 64px);
+    font-weight: 700;
+    line-height: .98;
+    letter-spacing: -0.025em;
+    margin-bottom: 14px;
+  }
+
+  .hero-copy p {
+    font-size: 21px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  .hero-image {
+    width: min(980px, 100%);
+    aspect-ratio: 21 / 8;
+    margin-top: 28px;
+    background: url("/static/rail-tech-hero.png") center / cover no-repeat;
+    filter: drop-shadow(3px 5px 30px rgba(0,0,0,.16));
+  }
+
+  .container {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 48px 24px 120px;
+  }
+
+  .card {
+    background: var(--canvas);
+    border: 1px solid var(--hairline);
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .progress-shell {
+    display: grid;
+    gap: 18px;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 12px;
+    background: var(--soft);
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--blue);
+    border-radius: 9999px;
+    transition: width 0.5s ease;
+  }
+
+  .progress-fill.done { background: var(--success); }
+  .progress-fill.failed { background: var(--sale); }
+  .progress-fill.intermediate { background: var(--orange); }
+
+  .status-text {
+    text-align: center;
+    font-size: 24px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    font-weight: 700;
+  }
+
+  .status-msg {
+    text-align: center;
+    font-size: 17px;
+    line-height: 1.47;
+    letter-spacing: -0.018em;
+    color: var(--muted);
+  }
+
+  .error-msg {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    border: 1px solid rgba(211,0,5,.22);
+    color: var(--sale);
+    background: #fff;
+    font-size: 14px;
+    word-break: break-all;
+  }
+
+  .intermediate-preview {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .intermediate-preview h3 {
+    font-size: 21px;
+    line-height: 1.19;
+    font-weight: 700;
+    letter-spacing: -0.012em;
+    margin-bottom: 16px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 9999px;
+    background: var(--soft);
+    color: var(--orange);
+    font-size: 12px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .figure-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 20px;
+    max-height: 520px;
+    overflow-y: auto;
+    padding: 2px;
+  }
+
+  .figure-card {
+    border: 1px solid var(--hairline);
+    border-radius: 18px;
+    overflow: hidden;
+    background: var(--canvas);
+    cursor: pointer;
+    transition: border-color .18s, transform .18s;
+  }
+
+  .figure-card:hover {
+    border-color: var(--blue);
+    transform: translateY(-2px);
+  }
+
+  .figure-card img {
+    width: 100%;
+    height: 150px;
+    object-fit: contain;
+    background: var(--soft);
+    display: block;
+  }
+
+  .fig-label {
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .downloads {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 24px;
+  }
+
+  .download-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 10px 20px;
+    border-radius: 9999px;
+    border: none;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .16s, opacity .16s, background .16s;
+  }
+
+  .download-btn:active { transform: scale(.95); }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-success { background: var(--black); color: #fff; }
+  .btn-warning { background: var(--black); color: #fff; }
+  .btn-secondary { background: var(--soft); color: var(--ink); }
+  .download-btn:hover { opacity: .88; }
+
+  .back-link {
+    text-align: center;
+    margin-top: 8px;
+  }
+
+  .back-link a {
+    color: var(--blue);
+    text-decoration: none;
+    font-size: 17px;
+    line-height: 2.41;
+  }
+
+  .back-link a:hover { text-decoration: underline; }
+
+  .spinner {
+    display: inline-block;
+    width: 17px;
+    height: 17px;
+    border: 2px solid rgba(0,102,204,.16);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Lightbox */
-  .lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 999; justify-content: center; align-items: center; cursor: pointer; }
+  .lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.88);
+    z-index: 999;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+  }
+
   .lightbox.show { display: flex; }
   .lightbox img { max-width: 95%; max-height: 95%; object-fit: contain; }
-  .lightbox .close-hint { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 14px; opacity: 0.7; }
+  .close-hint { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 14px; opacity: .76; }
+
+  @media (max-width: 760px) {
+    .global-nav { justify-content: space-between; padding: 0 16px; gap: 12px; }
+    .global-nav span:nth-child(n+3) { display: none; }
+    .sub-nav { align-items: flex-start; flex-direction: column; padding: 12px 16px; }
+    .task-id { text-align: left; }
+    .hero-tile { min-height: 440px; padding: 42px 16px 0; }
+    .hero-image { aspect-ratio: 16 / 10; }
+    .container { padding: 32px 14px 190px; }
+    .card { padding: 20px; }
+    .downloads { justify-content: stretch; }
+    .download-btn { width: 100%; }
+  }
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>报告生成进度</h1>
+{% from "assistant_character.html" import assistant_character %}
+<nav class="global-nav">
+  <img src="/static/logo.png" alt="logo" />
+  <span>W102</span>
+  <span>Progress</span>
+  <span>Figures</span>
+  <span>Downloads</span>
+</nav>
 
+<header class="sub-nav">
+  <strong>报告生成进度</strong>
+  <div class="task-id">任务 ID: {{ task_id }} · 当前进度 {{ task.get('progress', 0) }}%</div>
+</header>
+
+<section class="hero-tile">
+  <div class="hero-copy">
+    <p class="eyebrow">REPORT PIPELINE</p>
+    <h1>任务正在驶入交付区。</h1>
+    <p>查看进度，确认图表，下载最终报告。</p>
+  </div>
+  <div class="hero-image" aria-hidden="true"></div>
+</section>
+
+<main class="container">
   <div class="card">
-    <div class="task-id">任务 ID: {{ task_id }}</div>
+    <div class="progress-shell">
+      <div class="progress-bar">
+        <div class="progress-fill {% if task.get('status') == 'done' %}done{% elif task.get('status') == 'failed' %}failed{% elif task.get('status') == 'intermediate' %}intermediate{% endif %}"
+             id="progressFill" style="width: {{ task.get('progress', 0) }}%"></div>
+      </div>
 
-    <div class="progress-bar">
-      <div class="progress-fill {% if task.get('status') == 'done' %}done{% elif task.get('status') == 'failed' %}failed{% elif task.get('status') == 'intermediate' %}intermediate{% endif %}"
-           id="progressFill" style="width: {{ task.get('progress', 0) }}%"></div>
+      <div class="status-text" id="statusText">
+        {% if task.get('status') == 'pending' or task.get('status') == 'running' %}
+          <span class="spinner"></span>{{ task.get('message', '处理中...') }}
+        {% elif task.get('status') == 'done' %}
+          &#10004; 报告生成完毕
+        {% elif task.get('status') == 'failed' %}
+          &#10008; 任务失败
+        {% elif task.get('status') == 'intermediate' %}
+          &#9888; Step 1 完成 — 图表已生成，请确认后继续
+        {% endif %}
+      </div>
+
+      <div class="status-msg" id="statusMsg">{{ task.get('message', '') }}</div>
     </div>
-
-    <div class="status-text" id="statusText">
-      {% if task.get('status') == 'pending' or task.get('status') == 'running' %}
-        <span class="spinner"></span>{{ task.get('message', '处理中...') }}
-      {% elif task.get('status') == 'done' %}
-        &#10004; 报告生成完毕
-      {% elif task.get('status') == 'failed' %}
-        &#10008; 任务失败
-      {% elif task.get('status') == 'intermediate' %}
-        &#9888; Step 1 完成 — 图表已生成，请确认后继续
-      {% endif %}
-    </div>
-
-    <div class="status-msg" id="statusMsg">{{ task.get('message', '') }}</div>
 
     {% if task.get('error') %}
     <div class="error-msg">{{ task['error'] }}</div>
     {% endif %}
 
-    <!-- 中间结果预览区域（intermediate 状态） -->
     {% if task.get('status') == 'intermediate' %}
     <div class="intermediate-preview">
       <h3>生成的图表预览 <span class="badge">{{ task.get('figures', [])|length }} 张</span></h3>
@@ -120,9 +431,20 @@
   <div class="back-link">
     <a href="/upload">返回上传页面</a>
   </div>
-</div>
+</main>
 
-<!-- Lightbox -->
+{% if task.get('status') == 'pending' or task.get('status') == 'running' %}
+  {{ assistant_character('thinking', task.get('message', '数据运行中，正在认真思考...')) }}
+{% elif task.get('status') == 'intermediate' %}
+  {{ assistant_character('talking', '图表已生成，请确认中间结果后继续。') }}
+{% elif task.get('status') == 'done' %}
+  {{ assistant_character('talking', '报告已经生成完毕，可以下载文件。') }}
+{% elif task.get('status') == 'failed' %}
+  {{ assistant_character('thinking', '任务遇到问题，可以查看错误信息或尝试续跑。') }}
+{% else %}
+  {{ assistant_character('idle', '我会同步展示当前任务状态。') }}
+{% endif %}
+
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <span class="close-hint">点击任意处关闭</span>
   <img id="lightboxImg" src="" alt="" />
@@ -139,6 +461,9 @@
         } else {
           document.getElementById('progressFill').style.width = data.progress + '%';
           document.getElementById('statusMsg').textContent = data.message;
+          if (window.reportAssistant) {
+            window.reportAssistant.think(data.message || '数据运行中，正在认真思考...');
+          }
           setTimeout(poll, 2000);
         }
       })

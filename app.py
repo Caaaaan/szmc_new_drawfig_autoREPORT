@@ -50,6 +50,7 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "w102-report-system-default-
 # IP 白名单 — 仅允许列表中的 IP 访问
 # ============================================================
 ALLOWED_IPS = {
+    "127.0.0.1",
     "10.10.17.208",
     "10.10.17.206",
     "10.10.17.207",
@@ -495,6 +496,24 @@ def serve_logo():
     logo_path = os.path.join(PROJECT_ROOT, "logo.png")
     if os.path.exists(logo_path):
         return send_file(logo_path)
+    return "", 404
+
+
+@app.route("/static/assistant-character.png")
+def serve_assistant_character():
+    """提供交互助手角色贴图。"""
+    character_path = os.path.join(PROJECT_ROOT, "assets", "assistant-character.png")
+    if os.path.exists(character_path):
+        return send_file(character_path)
+    return "", 404
+
+
+@app.route("/static/rail-tech-hero.png")
+def serve_rail_tech_hero():
+    """提供浅色科技轨道列车主视觉。"""
+    hero_path = os.path.join(PROJECT_ROOT, "assets", "rail-tech-hero.png")
+    if os.path.exists(hero_path):
+        return send_file(hero_path)
     return "", 404
 
 

@@ -1,0 +1,225 @@
+{% macro assistant_character(state='idle', message='准备就绪') %}
+<style>
+  .character-assistant {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 30;
+    display: grid;
+    justify-items: end;
+    gap: 8px;
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    color: #1f2933;
+  }
+
+  .character-bubble {
+    max-width: 210px;
+    padding: 9px 12px;
+    border: 1px solid rgba(24, 144, 255, 0.16);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 8px 24px rgba(22, 52, 84, 0.13);
+    font-size: 12px;
+    line-height: 1.55;
+    text-align: left;
+    opacity: 0;
+    transform: translateY(6px);
+    pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease;
+  }
+
+  .character-assistant:hover .character-bubble,
+  .character-assistant[data-state="talking"] .character-bubble,
+  .character-assistant[data-state="thinking"] .character-bubble,
+  .character-assistant[data-state="click"] .character-bubble {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .character-stage {
+    position: relative;
+    width: 158px;
+    height: 178px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    transform-origin: 50% 100%;
+    filter: drop-shadow(0 14px 18px rgba(18, 30, 44, 0.22));
+  }
+
+  .character-stage:focus-visible {
+    outline: 3px solid rgba(24, 144, 255, 0.35);
+    outline-offset: 4px;
+    border-radius: 10px;
+  }
+
+  .character-image {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .character-assistant[data-state="idle"] .character-stage {
+    animation: character-idle 4s ease-in-out infinite;
+  }
+
+  .character-assistant:hover .character-stage {
+    animation: character-hover .9s ease-in-out infinite alternate;
+  }
+
+  .character-assistant[data-state="click"] .character-stage {
+    animation: character-click .42s ease-out;
+  }
+
+  .character-assistant[data-state="thinking"] .character-image {
+    animation: character-thinking-image 1.2s ease-in-out infinite;
+    transform-origin: 52% 72%;
+  }
+
+  .character-assistant[data-state="talking"] .character-image {
+    animation: character-talk-image .72s ease-in-out infinite;
+    transform-origin: 50% 100%;
+  }
+
+  .character-assistant[data-state="click"] .character-spark {
+    opacity: 1;
+    animation: character-spark .7s ease-out;
+  }
+
+  .character-spark {
+    position: absolute;
+    left: 3px;
+    top: 24px;
+    width: 28px;
+    height: 28px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @keyframes character-idle {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-4px) rotate(.8deg); }
+  }
+
+  @keyframes character-hover {
+    from { transform: translateY(-3px) rotate(-1deg); }
+    to { transform: translateY(-7px) rotate(1deg); }
+  }
+
+  @keyframes character-click {
+    0% { transform: scale(1); }
+    45% { transform: scale(.94) translateY(4px); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes character-thinking-image {
+    0%, 100% { transform: rotate(-3deg) translateX(-1px); }
+    50% { transform: rotate(4deg) translateX(2px); }
+  }
+
+  @keyframes character-talk-image {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-3px) rotate(-1deg); }
+  }
+
+  @keyframes character-spark {
+    0% { transform: scale(.4); opacity: 0; }
+    30% { opacity: 1; }
+    100% { transform: scale(1.45); opacity: 0; }
+  }
+
+  @media (max-width: 720px) {
+    .character-assistant {
+      right: 12px;
+      bottom: 12px;
+    }
+
+    .character-stage {
+      width: 112px;
+      height: 126px;
+    }
+
+    .character-bubble {
+      max-width: 176px;
+      font-size: 11px;
+    }
+
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .character-stage,
+    .character-image,
+    .character-spark {
+      animation: none !important;
+    }
+  }
+</style>
+
+<div class="character-assistant" data-state="{{ state }}" id="reportAssistant">
+  <div class="character-bubble" id="reportAssistantBubble">{{ message }}</div>
+  <button class="character-stage" type="button" aria-label="交互助手" id="reportAssistantStage">
+    <img class="character-image" src="/static/assistant-character.png" alt="" />
+    <svg class="character-spark" viewBox="-14 -14 28 28" aria-hidden="true">
+      <path d="M0 -12 L4 -3 L13 0 L4 4 L0 13 L-4 4 L-13 0 L-4 -3 Z" fill="#f5a623" />
+    </svg>
+  </button>
+</div>
+
+<script>
+(function() {
+  var assistant = document.getElementById('reportAssistant');
+  if (!assistant || assistant.dataset.ready === '1') return;
+  assistant.dataset.ready = '1';
+
+  var bubble = document.getElementById('reportAssistantBubble');
+  var stage = document.getElementById('reportAssistantStage');
+  var messages = {
+    idle: '准备就绪，可以开始处理数据。',
+    hover: '我在这里，随时帮你盯着流程。',
+    click: '收到，我们继续推进。',
+    talking: '正在汇报当前处理状态。',
+    thinking: '数据运行中，正在认真思考...'
+  };
+  var resetTimer;
+  var steadyState = assistant.dataset.state || 'idle';
+  var steadyMessage = bubble ? bubble.textContent : messages[steadyState];
+
+  function setState(state, message, autoReset) {
+    assistant.dataset.state = state;
+    if (bubble) bubble.textContent = message || messages[state] || messages.idle;
+    if (state !== 'click' && state !== 'hover') {
+      steadyState = state;
+      steadyMessage = message || messages[state] || messages.idle;
+    }
+    if (resetTimer) window.clearTimeout(resetTimer);
+    if (autoReset) {
+      resetTimer = window.setTimeout(function() {
+        setState(steadyState, steadyMessage);
+      }, autoReset);
+    }
+  }
+
+  window.reportAssistant = {
+    setState: setState,
+    think: function(message) { setState('thinking', message || messages.thinking); },
+    talk: function(message) { setState('talking', message || messages.talking); },
+    idle: function(message) { setState('idle', message || messages.idle); }
+  };
+
+  stage.addEventListener('mouseenter', function() {
+    if (assistant.dataset.state === 'idle') setState('hover', messages.hover);
+  });
+  stage.addEventListener('mouseleave', function() {
+    if (assistant.dataset.state === 'hover') setState('idle', messages.idle);
+  });
+  stage.addEventListener('click', function() {
+    setState('click', messages.click, 1200);
+  });
+
+  setState(assistant.dataset.state || 'idle', bubble ? bubble.textContent : '');
+})();
+</script>
+{% endmacro %}
