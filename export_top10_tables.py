@@ -10,6 +10,9 @@ import re
 import sys
 import pandas as pd
 
+# 阈值常量（与 draw_process.py / generate_summary_tables.py 保持一致）
+HEIGHT_MAX_THRESHOLD = 4400  # mm（11号线/5号线导高上限，导高>=4400mm不纳入统计）
+
 
 def detect_direction(df: pd.DataFrame, filepath: str, known_direction: str = None) -> str:
     """检测上行/下行。
@@ -112,7 +115,7 @@ def export_height_diff_data(df: pd.DataFrame, output_dir: str, direction: str, f
 
     # 11号线/5号线仅统计导高 < 4400mm 的数据点
     if "11号线" in filepath or "5号线" in filepath:
-        df_work = df_work[df_work["导高(mm)"] < 4400]
+        df_work = df_work[df_work["导高(mm)"] < HEIGHT_MAX_THRESHOLD]
 
     grouped = df_work.groupby(["站区", "杆号"], as_index=False).agg(
         公里标=("公里标", "first"),
@@ -186,8 +189,8 @@ def export_wear_width_data(df: pd.DataFrame, output_dir: str, direction: str, fi
     # 导高过滤：导高>=4400mm的不参与筛选，对11号线/5号线生效
     if ("11号线" in filepath or "5号线" in filepath) and "导高(mm)" in df_work.columns:
         before = len(df_work)
-        df_work = df_work[df_work["导高(mm)"] < 4400]
-        print(f"  Excel4 导高过滤: 排除 {before - len(df_work)} 行（导高>=4400mm）")
+        df_work = df_work[df_work["导高(mm)"] < HEIGHT_MAX_THRESHOLD]
+        print(f"  Excel4 导高过滤: 排除 {before - len(df_work)} 行（导高>={HEIGHT_MAX_THRESHOLD}mm）")
 
     df_work = df_work.sort_values("磨耗宽度(mm)", ascending=False)
     df_work = df_work.drop_duplicates(subset=["杆号"])

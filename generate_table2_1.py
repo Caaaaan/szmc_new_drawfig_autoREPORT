@@ -4,6 +4,9 @@ import pandas as pd
 
 OUTPUT_NAME = "table2_1.xlsx"
 
+# 阈值常量（与 draw_process.py / generate_summary_tables.py 保持一致）
+HEIGHT_MAX_THRESHOLD = 4400  # mm（11号线/5号线导高上限）
+
 
 def _parse_date_from_filename(fname: str):
     """从文件名中提取日期字符串 YYYY年MM月DD日"""
@@ -166,7 +169,7 @@ def compute_defect_counts(df_up: pd.DataFrame, df_down: pd.DataFrame, line_name:
         sub = df_dir
         # 11号线/5号线仅统计导高 < 4400mm 的数据点
         if _filter_height_4400:
-            sub = sub[sub["导高(mm)"] < 4400]
+            sub = sub[sub["导高(mm)"] < HEIGHT_MAX_THRESHOLD]
         if len(sub) == 0:
             continue
         # groupby 与 draw_process.py graph5 对齐：用字符串拼接键
@@ -188,7 +191,7 @@ def compute_defect_counts(df_up: pd.DataFrame, df_down: pd.DataFrame, line_name:
             sub = df_dir.dropna(subset=["磨耗宽度(mm)"])
             # 11号线/5号线仅统计导高 < 4400mm 的数据点
             if _filter_height_4400 and "导高(mm)" in df_dir.columns:
-                sub = sub[sub["导高(mm)"] < 4400]
+                sub = sub[sub["导高(mm)"] < HEIGHT_MAX_THRESHOLD]
             if len(sub) > 0:
                 wear_widths.append(sub["磨耗宽度(mm)"])
     if wear_widths:

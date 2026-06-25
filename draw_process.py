@@ -22,6 +22,7 @@ PRESSURE_HIGH_THRESHOLD = 130  # 接触压力上限阈值，单位：N
 PRESSURE_LOW_THRESHOLD = 100  # 接触压力下限阈值，单位：N
 PRESSURE_MIN_VALID = 10  # 接触压力最低有效值，<=此值视为接触异常，不纳入统计
 WEAR_WIDTH_THRESHOLD = 8  # 磨耗宽度阈值，单位：mm
+HEIGHT_MAX_THRESHOLD = 4400  # 导高上限阈值，单位：mm（11号线/5号线导高>=4400mm不纳入统计）
 
 # 导高差值区间定义（前开后闭）
 HEIGHT_DIFF_BINS = [0, 4, 6, 8, 10, 12, 15, 101]
@@ -548,7 +549,7 @@ def plot_graph5_height_diff_pie(file_info_list: List[Dict],
             continue
         # 11号线/5号线仅统计导高 < 4400mm 的数据点
         if _is_line_11:
-            df = df[df[height_col] < 4400]
+            df = df[df[height_col] < HEIGHT_MAX_THRESHOLD]
         # 按"站区+杆号"分组
         grouped = df.groupby(df['站区'].astype(str) + '_' + df['杆号'].astype(str))
         height_range = grouped[height_col].agg(['max', 'min'])
@@ -754,7 +755,7 @@ def plot_graph7_wear_width_distribution(file_info_list: List[Dict],
             continue
         # 11号线/5号线仅统计导高 < 4400mm 的数据点
         if _is_line_11 and '导高(mm)' in df.columns:
-            df = df[df['导高(mm)'] < 4400]
+            df = df[df['导高(mm)'] < HEIGHT_MAX_THRESHOLD]
         wear = pd.to_numeric(df[wear_col], errors='coerce')
         # 只统计磨耗宽度 >= 8mm 的
         wear_ge8 = wear[wear >= WEAR_WIDTH_THRESHOLD]
@@ -851,7 +852,7 @@ def plot_graph8_wear_width_by_station(file_info_list: List[Dict],
             continue
         # 11号线/5号线仅统计导高 < 4400mm 的数据点
         if _is_line_11 and '导高(mm)' in df.columns:
-            df = df[df['导高(mm)'] < 4400]
+            df = df[df['导高(mm)'] < HEIGHT_MAX_THRESHOLD]
         wear = pd.to_numeric(df[wear_col], errors='coerce')
         mask = wear > WEAR_WIDTH_THRESHOLD
         counts = df.loc[mask, '站区'].value_counts()
@@ -941,7 +942,7 @@ def plot_graph9_wear_width_by_pullout(file_info_list: List[Dict],
             continue
         # 11号线/5号线仅统计导高 < 4400mm 的数据点
         if _is_line_11 and '导高(mm)' in df.columns:
-            df = df[df['导高(mm)'] < 4400]
+            df = df[df['导高(mm)'] < HEIGHT_MAX_THRESHOLD]
         wear = pd.to_numeric(df[wear_col], errors='coerce')
         pullout = pd.to_numeric(df[pullout_col], errors='coerce')
         mask = wear > WEAR_WIDTH_THRESHOLD
