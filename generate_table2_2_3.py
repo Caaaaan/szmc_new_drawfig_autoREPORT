@@ -61,8 +61,12 @@ def build_data_summary(all_data: dict, max_rows_per_file: int = 100) -> str:
 
 def call_deepseek_api(data_summary: str) -> dict:
     """调用 DeepSeek API，让模型从缺陷数据中提取结构化统计。"""
+    api_key = os.environ.get("DEEPSEEK_API_KEY")
+    if not api_key:
+        raise RuntimeError("未设置环境变量 DEEPSEEK_API_KEY")
+
     client = OpenAI(
-        api_key="REMOVED_SECRET",
+        api_key=api_key,
         base_url="https://api.deepseek.com",
     )
 

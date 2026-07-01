@@ -5,6 +5,12 @@ __pycache__/
 
 # IDE
 .vscode/
+.DS_Store
+
+# Local secrets
+.env
+.env.*
+!.env.example
 
 # Claude
 .claude/
